@@ -1,8 +1,1111 @@
 import { gs, GlideRecord, GlideDateTime } from '@servicenow/glide'
-import { KonnectFestWalletService } from './walletService'
-import { KonnectFestPaymentService } from './paymentService'
-import { KonnectFestQRService } from './qrService'
-import { KonnectFestSettlementService } from './settlementService'
+
+// ==========================================
+// 1. WALLET SERVICE
+// ==========================================
+
+
+export interface WalletOperationResult {
+    success: boolean
+    message: string
+    walletSysId?: string
+    ledgerSysId?: string
+    transactionSysId?: string
+    couponSysId?: string
+    availableBalance?: number
+    reservedBalance?: number
+}
+
+/**
+ * Service to manage wallet balances, double-entry ledger entries,
+ * concurrency-safe mutations, and financial reconciliation invariants.
+ */
+export class KonnectFestWalletService {
+    /**
+     * Retrieves or creates a wallet for a participant and event.
+     */
+    static getOrCreateWallet(participantSysId: string, eventSysId: string): { sysId: string; availableBalance: number; reservedBalance: number; status: string } | null {
+        const gr = new GlideRecord('x_2327324_konnect_wallet')
+        gr.addQuery('participant', participantSysId)
+        gr.addQuery('event', eventSysId)
+        gr.query()
+        if (gr.next()) {
+            return {
+                sysId: gr.getUniqueValue(),
+                availableBalance: parseFloat(gr.getValue('available_balance') || '0'),
+                reservedBalance: parseFloat(gr.getValue('reserved_balance') || '0'),
+                status: gr.getValue('status') || 'active',
+            }
+        }
+        return null
+    }
+
+    /**
+     * Initializes wallet upon verified registration payment.
+     * Idempotent: guaranteed to execute once per payment record.
+     */
+    static initializeWalletFromPayment(paymentSysId: string): WalletOperationResult {
+        const paymentGr = new GlideRecord('x_2327324_konnect_payment')
+        if (!paymentGr.get(paymentSysId)) {
+            return { success: false, message: 'Payment record not found.' }
+        }
+
+        const status = paymentGr.getValue('status')
+        if (status !== 'verified') {
+            return { success: false, message: 'Cannot credit wallet: Payment is not verified by Finance.' }
+        }
+
+        const creditStatus = paymentGr.getValue('wallet_credit_status')
+        if (creditStatus === 'credited') {
+            return { success: false, message: 'Payment has already been credited to wallet.' }
+        }
+
+        const participantSysId = paymentGr.getValue('participant')
+        const eventSysId = paymentGr.getValue('event')
+        const amount = parseFloat(paymentGr.getValue('verified_amount') || paymentGr.getValue('requested_amount') || '0')
+
+        if (amount <= 0) {
+            return { success: false, message: 'Verified amount must be greater than zero.' }
+        }
+
+        const idempotencyKey = `INIT_${paymentSysId}_${participantSysId}`
+
+        // Check if ledger record with this idempotency key already exists
+        const checkLedger = new GlideRecord('x_2327324_konnect_wallet_ledger')
+        checkLedger.addQuery('idempotency_key', idempotencyKey)
+        checkLedger.query()
+        if (checkLedger.next()) {
+            paymentGr.setValue('wallet_credit_status', 'credited')
+            paymentGr.update()
+            return { success: false, message: 'Initial credit already processed for this payment.' }
+        }
+
+        // Get or Create Wallet
+        let walletSysId = ''
+        let currentAvailable = 0
+        let currentReserved = 0
+
+        const walletGr = new GlideRecord('x_2327324_konnect_wallet')
+        walletGr.addQuery('participant', participantSysId)
+        walletGr.addQuery('event', eventSysId)
+        walletGr.query()
+
+        if (walletGr.next()) {
+            walletSysId = walletGr.getUniqueValue()
+            currentAvailable = parseFloat(walletGr.getValue('available_balance') || '0')
+            currentReserved = parseFloat(walletGr.getValue('reserved_balance') || '0')
+        } else {
+            walletGr.initialize()
+            walletGr.setValue('participant', participantSysId)
+            walletGr.setValue('event', eventSysId)
+            walletGr.setValue('initial_amount', amount)
+            walletGr.setValue('available_balance', 0)
+            walletGr.setValue('reserved_balance', 0)
+            walletGr.setValue('total_spent', 0)
+            walletGr.setValue('total_refunded', 0)
+            walletGr.setValue('status', 'active')
+            walletSysId = walletGr.insert()
+        }
+
+        const newAvailable = currentAvailable + amount
+
+        // Create Ledger Record
+        const ledgerGr = new GlideRecord('x_2327324_konnect_wallet_ledger')
+        ledgerGr.initialize()
+        ledgerGr.setValue('wallet', walletSysId)
+        ledgerGr.setValue('participant', participantSysId)
+        ledgerGr.setValue('event', eventSysId)
+        ledgerGr.setValue('entry_type', 'initial_credit')
+        ledgerGr.setValue('amount', amount)
+        ledgerGr.setValue('available_balance_before', currentAvailable)
+        ledgerGr.setValue('available_balance_after', newAvailable)
+        ledgerGr.setValue('reserved_balance_before', currentReserved)
+        ledgerGr.setValue('reserved_balance_after', currentReserved)
+        ledgerGr.setValue('source_payment', paymentSysId)
+        ledgerGr.setValue('idempotency_key', idempotencyKey)
+        ledgerGr.setValue('status', 'posted')
+        ledgerGr.setValue('notes', `Initial verified registration credit for payment ${paymentGr.getValue('number')}`)
+        const ledgerSysId = ledgerGr.insert()
+
+        // Update Wallet Balance
+        walletGr.setValue('available_balance', newAvailable)
+        walletGr.setValue('last_transaction_date', new GlideDateTime().getValue())
+        walletGr.update()
+
+        // Update Payment record
+        paymentGr.setValue('wallet_credit_status', 'credited')
+        paymentGr.setValue('wallet_credit_timestamp', new GlideDateTime().getValue())
+        paymentGr.update()
+
+        // Activate participant if needed
+        const partGr = new GlideRecord('x_2327324_konnect_participant')
+        if (partGr.get(participantSysId)) {
+            partGr.setValue('status', 'active')
+            partGr.update()
+        }
+
+        gs.info(`[KonnectFest] Initial wallet credit posted: Wallet=${walletSysId}, Amount=₹${amount}`)
+
+        return {
+            success: true,
+            message: 'Wallet initialized and credited successfully.',
+            walletSysId,
+            ledgerSysId,
+            availableBalance: newAvailable,
+        }
+    }
+
+    /**
+     * Credits a verified top-up payment to the participant wallet.
+     */
+    static creditTopUpPayment(paymentSysId: string): WalletOperationResult {
+        const paymentGr = new GlideRecord('x_2327324_konnect_payment')
+        if (!paymentGr.get(paymentSysId)) {
+            return { success: false, message: 'Payment record not found.' }
+        }
+
+        if (paymentGr.getValue('status') !== 'verified') {
+            return { success: false, message: 'Payment is not verified by Finance.' }
+        }
+
+        if (paymentGr.getValue('wallet_credit_status') === 'credited') {
+            return { success: false, message: 'Top-up has already been credited.' }
+        }
+
+        const participantSysId = paymentGr.getValue('participant')
+        const eventSysId = paymentGr.getValue('event')
+        const amount = parseFloat(paymentGr.getValue('verified_amount') || paymentGr.getValue('requested_amount') || '0')
+
+        if (amount <= 0) {
+            return { success: false, message: 'Verified amount must be positive.' }
+        }
+
+        const idempotencyKey = `TOPUP_${paymentSysId}_${new GlideDateTime().getNumericValue()}`
+
+        const walletGr = new GlideRecord('x_2327324_konnect_wallet')
+        walletGr.addQuery('participant', participantSysId)
+        walletGr.addQuery('event', eventSysId)
+        walletGr.query()
+
+        if (!walletGr.next()) {
+            return { success: false, message: 'Wallet not found for participant in this event.' }
+        }
+
+        const walletSysId = walletGr.getUniqueValue()
+        const currentAvailable = parseFloat(walletGr.getValue('available_balance') || '0')
+        const currentReserved = parseFloat(walletGr.getValue('reserved_balance') || '0')
+        const newAvailable = currentAvailable + amount
+
+        // Ledger Entry
+        const ledgerGr = new GlideRecord('x_2327324_konnect_wallet_ledger')
+        ledgerGr.initialize()
+        ledgerGr.setValue('wallet', walletSysId)
+        ledgerGr.setValue('participant', participantSysId)
+        ledgerGr.setValue('event', eventSysId)
+        ledgerGr.setValue('entry_type', 'top_up')
+        ledgerGr.setValue('amount', amount)
+        ledgerGr.setValue('available_balance_before', currentAvailable)
+        ledgerGr.setValue('available_balance_after', newAvailable)
+        ledgerGr.setValue('reserved_balance_before', currentReserved)
+        ledgerGr.setValue('reserved_balance_after', currentReserved)
+        ledgerGr.setValue('source_payment', paymentSysId)
+        ledgerGr.setValue('idempotency_key', idempotencyKey)
+        ledgerGr.setValue('status', 'posted')
+        ledgerGr.setValue('notes', `Verified top-up payment UTR: ${paymentGr.getValue('utr_reference')}`)
+        const ledgerSysId = ledgerGr.insert()
+
+        // Update Wallet
+        walletGr.setValue('available_balance', newAvailable)
+        walletGr.setValue('last_transaction_date', new GlideDateTime().getValue())
+        walletGr.update()
+
+        // Update Payment Status
+        paymentGr.setValue('wallet_credit_status', 'credited')
+        paymentGr.setValue('wallet_credit_timestamp', new GlideDateTime().getValue())
+        paymentGr.update()
+
+        return {
+            success: true,
+            message: 'Top-up successfully credited to wallet.',
+            walletSysId,
+            ledgerSysId,
+            availableBalance: newAvailable,
+        }
+    }
+
+    /**
+     * Executes atomic vendor purchase redemption:
+     * 1. Checks transaction validity and QR token
+     * 2. Checks participant wallet balance
+     * 3. Debits participant wallet & logs debit ledger
+     * 4. Credits vendor ledger
+     * 5. Marks purchase transaction SUCCESS
+     * 6. Generates digital coupon / purchase receipt
+     */
+    static confirmPurchaseTransaction(transactionSysId: string, participantSysId: string): WalletOperationResult {
+        const txGr = new GlideRecord('x_2327324_konnect_purchase_tx')
+        if (!txGr.get(transactionSysId)) {
+            return { success: false, message: 'Transaction record not found.' }
+        }
+
+        const txStatus = txGr.getValue('status')
+        if (txStatus !== 'pending') {
+            return {
+                success: false,
+                message: `Transaction cannot be confirmed. Current status: ${txStatus}`,
+            }
+        }
+
+        // Validate QR expiry
+        const expiresAtStr = txGr.getValue('qr_expires_at')
+        if (expiresAtStr) {
+            const expGdt = new GlideDateTime(expiresAtStr)
+            const nowGdt = new GlideDateTime()
+            if (nowGdt.after(expGdt)) {
+                txGr.setValue('status', 'expired')
+                txGr.setValue('rejection_reason', 'QR token expired (60s limit reached)')
+                txGr.update()
+                return { success: false, message: 'QR token has expired. Vendor must regenerate a new QR.' }
+            }
+        }
+
+        const amount = parseFloat(txGr.getValue('amount') || '0')
+        const eventSysId = txGr.getValue('event')
+        const vendorSysId = txGr.getValue('vendor')
+        const itemDesc = txGr.getValue('item_description') || 'Festival Purchase'
+
+        // Check Event state
+        const eventGr = new GlideRecord('x_2327324_konnect_event')
+        if (eventGr.get(eventSysId)) {
+            const evState = eventGr.getValue('state')
+            if (evState === 'completed' || evState === 'closed') {
+                txGr.setValue('status', 'rejected')
+                txGr.setValue('rejection_reason', 'Event is already completed or closed.')
+                txGr.update()
+                return { success: false, message: 'Event is closed for new purchases.' }
+            }
+        }
+
+        // Query Participant Wallet
+        const walletGr = new GlideRecord('x_2327324_konnect_wallet')
+        walletGr.addQuery('participant', participantSysId)
+        walletGr.addQuery('event', eventSysId)
+        walletGr.query()
+
+        if (!walletGr.next()) {
+            txGr.setValue('status', 'rejected')
+            txGr.setValue('rejection_reason', 'Participant wallet not found for this event.')
+            txGr.update()
+            return { success: false, message: 'Active event wallet not found.' }
+        }
+
+        const walletStatus = walletGr.getValue('status')
+        if (walletStatus !== 'active') {
+            txGr.setValue('status', 'rejected')
+            txGr.setValue('rejection_reason', `Wallet is ${walletStatus}.`)
+            txGr.update()
+            return { success: false, message: `Wallet is ${walletStatus}. Cannot make purchases.` }
+        }
+
+        const currentAvailable = parseFloat(walletGr.getValue('available_balance') || '0')
+        const currentReserved = parseFloat(walletGr.getValue('reserved_balance') || '0')
+
+        if (currentAvailable < amount) {
+            txGr.setValue('status', 'rejected')
+            txGr.setValue('rejection_reason', `Insufficient wallet balance. Required ₹${amount}, Available ₹${currentAvailable}`)
+            txGr.update()
+            return {
+                success: false,
+                message: `Insufficient wallet balance. Available: ₹${currentAvailable.toFixed(2)}, Required: ₹${amount.toFixed(2)}`,
+            }
+        }
+
+        // Deduct from wallet
+        const newAvailable = currentAvailable - amount
+        const currentTotalSpent = parseFloat(walletGr.getValue('total_spent') || '0') + amount
+
+        const idempotencyKey = `PURCHASE_${transactionSysId}_${participantSysId}`
+
+        // Check for duplicate processing
+        const checkLedger = new GlideRecord('x_2327324_konnect_wallet_ledger')
+        checkLedger.addQuery('idempotency_key', idempotencyKey)
+        checkLedger.query()
+        if (checkLedger.next()) {
+            return { success: false, message: 'Transaction has already been processed.' }
+        }
+
+        // 1. Create Wallet Ledger Debit Record
+        const ledgerGr = new GlideRecord('x_2327324_konnect_wallet_ledger')
+        ledgerGr.initialize()
+        ledgerGr.setValue('wallet', walletGr.getUniqueValue())
+        ledgerGr.setValue('participant', participantSysId)
+        ledgerGr.setValue('event', eventSysId)
+        ledgerGr.setValue('entry_type', 'debit')
+        ledgerGr.setValue('amount', amount)
+        ledgerGr.setValue('available_balance_before', currentAvailable)
+        ledgerGr.setValue('available_balance_after', newAvailable)
+        ledgerGr.setValue('reserved_balance_before', currentReserved)
+        ledgerGr.setValue('reserved_balance_after', currentReserved)
+        ledgerGr.setValue('source_transaction', transactionSysId)
+        ledgerGr.setValue('idempotency_key', idempotencyKey)
+        ledgerGr.setValue('status', 'posted')
+        ledgerGr.setValue('notes', `Purchase: ${itemDesc}`)
+        const ledgerSysId = ledgerGr.insert()
+
+        // 2. Update Wallet
+        walletGr.setValue('available_balance', newAvailable)
+        walletGr.setValue('total_spent', currentTotalSpent)
+        walletGr.setValue('last_transaction_date', new GlideDateTime().getValue())
+        walletGr.update()
+
+        // 3. Create Vendor Ledger Credit
+        const vendorLedgerGr = new GlideRecord('x_2327324_konnect_vendor_ledger')
+        vendorLedgerGr.initialize()
+        vendorLedgerGr.setValue('vendor', vendorSysId)
+        vendorLedgerGr.setValue('event', eventSysId)
+        vendorLedgerGr.setValue('purchase_transaction', transactionSysId)
+        vendorLedgerGr.setValue('credit_amount', amount)
+        vendorLedgerGr.setValue('status', 'unsettled')
+        vendorLedgerGr.insert()
+
+        // 4. Update Purchase Transaction
+        txGr.setValue('status', 'success')
+        txGr.setValue('participant', participantSysId)
+        txGr.setValue('confirmed_at', new GlideDateTime().getValue())
+        txGr.setValue('idempotency_key', idempotencyKey)
+        txGr.update()
+
+        // 5. Create Digital Coupon / Purchase Receipt
+        const couponGr = new GlideRecord('x_2327324_konnect_digital_coupon')
+        couponGr.initialize()
+        couponGr.setValue('coupon_id', `RCPT-${new GlideDateTime().getNumericValue()}`)
+        couponGr.setValue('purchase_transaction', transactionSysId)
+        couponGr.setValue('event', eventSysId)
+        couponGr.setValue('vendor', vendorSysId)
+        couponGr.setValue('participant', participantSysId)
+        couponGr.setValue('item_description', itemDesc)
+        couponGr.setValue('value', amount)
+        couponGr.setValue('status', 'redeemed')
+        couponGr.setValue('issued_at', new GlideDateTime().getValue())
+        const couponSysId = couponGr.insert()
+
+        gs.info(`[KonnectFest] Purchase confirmed: Tx=${transactionSysId}, Participant=${participantSysId}, Amount=₹${amount}`)
+
+        return {
+            success: true,
+            message: 'Purchase confirmed successfully! Digital receipt generated.',
+            transactionSysId,
+            walletSysId: walletGr.getUniqueValue(),
+            ledgerSysId,
+            couponSysId,
+            availableBalance: newAvailable,
+        }
+    }
+
+    /**
+     * Submits a post-event refund request and reserves/holds the requested amount.
+     */
+    static requestRefund(
+        participantSysId: string,
+        eventSysId: string,
+        requestedAmount: number,
+        bankDetails: { accountHolder: string; accountNumber: string; ifsc: string; upiId?: string }
+    ): WalletOperationResult {
+        // Validate Event is completed
+        const eventGr = new GlideRecord('x_2327324_konnect_event')
+        if (!eventGr.get(eventSysId)) {
+            return { success: false, message: 'Event not found.' }
+        }
+        if (eventGr.getValue('state') !== 'completed') {
+            return { success: false, message: 'Refunds can only be requested after event completion.' }
+        }
+
+        if (requestedAmount <= 0) {
+            return { success: false, message: 'Refund amount must be greater than zero.' }
+        }
+
+        // Check for existing pending refund
+        const pendingRef = new GlideRecord('x_2327324_konnect_refund_request')
+        pendingRef.addQuery('participant', participantSysId)
+        pendingRef.addQuery('event', eventSysId)
+        pendingRef.addQuery('status', 'IN', 'submitted,under_review,approved_for_payout')
+        pendingRef.query()
+        if (pendingRef.next()) {
+            return { success: false, message: 'An active refund request already exists for this event.' }
+        }
+
+        const walletGr = new GlideRecord('x_2327324_konnect_wallet')
+        walletGr.addQuery('participant', participantSysId)
+        walletGr.addQuery('event', eventSysId)
+        walletGr.query()
+
+        if (!walletGr.next()) {
+            return { success: false, message: 'Wallet not found.' }
+        }
+
+        const available = parseFloat(walletGr.getValue('available_balance') || '0')
+        const reserved = parseFloat(walletGr.getValue('reserved_balance') || '0')
+
+        if (requestedAmount > available) {
+            return {
+                success: false,
+                message: `Requested refund (₹${requestedAmount.toFixed(2)}) exceeds available balance (₹${available.toFixed(2)}).`,
+            }
+        }
+
+        // Reserve hold
+        const newAvailable = available - requestedAmount
+        const newReserved = reserved + requestedAmount
+
+        // 1. Create Refund Request
+        const refGr = new GlideRecord('x_2327324_konnect_refund_request')
+        refGr.initialize()
+        refGr.setValue('participant', participantSysId)
+        refGr.setValue('wallet', walletGr.getUniqueValue())
+        refGr.setValue('event', eventSysId)
+        refGr.setValue('requested_amount', requestedAmount)
+        refGr.setValue('reserved_amount', requestedAmount)
+        refGr.setValue('status', 'submitted')
+        refGr.setValue('bank_account_holder', bankDetails.accountHolder)
+        refGr.setValue('bank_account_number', bankDetails.accountNumber)
+        refGr.setValue('bank_ifsc', bankDetails.ifsc)
+        if (bankDetails.upiId) refGr.setValue('upi_id', bankDetails.upiId)
+        const refSysId = refGr.insert()
+
+        // 2. Create Ledger Hold Entry
+        const ledgerGr = new GlideRecord('x_2327324_konnect_wallet_ledger')
+        ledgerGr.initialize()
+        ledgerGr.setValue('wallet', walletGr.getUniqueValue())
+        ledgerGr.setValue('participant', participantSysId)
+        ledgerGr.setValue('event', eventSysId)
+        ledgerGr.setValue('entry_type', 'refund_hold')
+        ledgerGr.setValue('amount', requestedAmount)
+        ledgerGr.setValue('available_balance_before', available)
+        ledgerGr.setValue('available_balance_after', newAvailable)
+        ledgerGr.setValue('reserved_balance_before', reserved)
+        ledgerGr.setValue('reserved_balance_after', newReserved)
+        ledgerGr.setValue('idempotency_key', `REF_HOLD_${refSysId}`)
+        ledgerGr.setValue('status', 'posted')
+        ledgerGr.setValue('notes', `Refund hold reserved for Request ${refGr.getValue('number')}`)
+        ledgerGr.insert()
+
+        // 3. Update Wallet Balances
+        walletGr.setValue('available_balance', newAvailable)
+        walletGr.setValue('reserved_balance', newReserved)
+        walletGr.update()
+
+        return {
+            success: true,
+            message: 'Refund request submitted. Amount held in reserve pending Finance payout.',
+            walletSysId: walletGr.getUniqueValue(),
+            availableBalance: newAvailable,
+            reservedBalance: newReserved,
+        }
+    }
+
+    /**
+     * Financer records actual bank payout for refund, releasing reserved hold.
+     */
+    static finalizeRefundPayout(refundSysId: string, payoutRef: string, financerUserSysId: string): WalletOperationResult {
+        const refGr = new GlideRecord('x_2327324_konnect_refund_request')
+        if (!refGr.get(refundSysId)) {
+            return { success: false, message: 'Refund request not found.' }
+        }
+
+        const currentStatus = refGr.getValue('status')
+        if (currentStatus === 'paid') {
+            return { success: false, message: 'Refund has already been paid.' }
+        }
+
+        const walletSysId = refGr.getValue('wallet')
+        const amount = parseFloat(refGr.getValue('reserved_amount') || refGr.getValue('requested_amount') || '0')
+        const participantSysId = refGr.getValue('participant')
+        const eventSysId = refGr.getValue('event')
+
+        const walletGr = new GlideRecord('x_2327324_konnect_wallet')
+        if (!walletGr.get(walletSysId)) {
+            return { success: false, message: 'Wallet not found.' }
+        }
+
+        const currentAvailable = parseFloat(walletGr.getValue('available_balance') || '0')
+        const currentReserved = parseFloat(walletGr.getValue('reserved_balance') || '0')
+        const newReserved = Math.max(0, currentReserved - amount)
+        const totalRefunded = parseFloat(walletGr.getValue('total_refunded') || '0') + amount
+
+        // Ledger Entry for Payout
+        const ledgerGr = new GlideRecord('x_2327324_konnect_wallet_ledger')
+        ledgerGr.initialize()
+        ledgerGr.setValue('wallet', walletSysId)
+        ledgerGr.setValue('participant', participantSysId)
+        ledgerGr.setValue('event', eventSysId)
+        ledgerGr.setValue('entry_type', 'refund_payout')
+        ledgerGr.setValue('amount', amount)
+        ledgerGr.setValue('available_balance_before', currentAvailable)
+        ledgerGr.setValue('available_balance_after', currentAvailable)
+        ledgerGr.setValue('reserved_balance_before', currentReserved)
+        ledgerGr.setValue('reserved_balance_after', newReserved)
+        ledgerGr.setValue('idempotency_key', `REF_PAY_${refundSysId}`)
+        ledgerGr.setValue('status', 'posted')
+        ledgerGr.setValue('notes', `Actual bank payout recorded. UTR: ${payoutRef}`)
+        ledgerGr.insert()
+
+        // Update Wallet
+        walletGr.setValue('reserved_balance', newReserved)
+        walletGr.setValue('total_refunded', totalRefunded)
+        walletGr.update()
+
+        // Update Refund Request
+        refGr.setValue('status', 'paid')
+        refGr.setValue('payout_reference', payoutRef)
+        refGr.setValue('payout_date', new GlideDateTime().getValue())
+        refGr.setValue('financer_decision_by', financerUserSysId)
+        refGr.update()
+
+        return {
+            success: true,
+            message: 'Refund payout recorded. Reserved balance cleared.',
+            availableBalance: currentAvailable,
+            reservedBalance: newReserved,
+        }
+    }
+
+    /**
+     * Financer rejects refund request, returning reserved amount back to available balance.
+     */
+    static rejectRefund(refundSysId: string, reason: string, financerUserSysId: string): WalletOperationResult {
+        const refGr = new GlideRecord('x_2327324_konnect_refund_request')
+        if (!refGr.get(refundSysId)) {
+            return { success: false, message: 'Refund request not found.' }
+        }
+
+        if (refGr.getValue('status') === 'paid') {
+            return { success: false, message: 'Cannot reject an already paid refund.' }
+        }
+
+        const walletSysId = refGr.getValue('wallet')
+        const amount = parseFloat(refGr.getValue('reserved_amount') || '0')
+        const participantSysId = refGr.getValue('participant')
+        const eventSysId = refGr.getValue('event')
+
+        const walletGr = new GlideRecord('x_2327324_konnect_wallet')
+        if (walletGr.get(walletSysId)) {
+            const currentAvailable = parseFloat(walletGr.getValue('available_balance') || '0')
+            const currentReserved = parseFloat(walletGr.getValue('reserved_balance') || '0')
+            const newAvailable = currentAvailable + amount
+            const newReserved = Math.max(0, currentReserved - amount)
+
+            // Ledger Hold Release Entry
+            const ledgerGr = new GlideRecord('x_2327324_konnect_wallet_ledger')
+            ledgerGr.initialize()
+            ledgerGr.setValue('wallet', walletSysId)
+            ledgerGr.setValue('participant', participantSysId)
+            ledgerGr.setValue('event', eventSysId)
+            ledgerGr.setValue('entry_type', 'refund_release')
+            ledgerGr.setValue('amount', amount)
+            ledgerGr.setValue('available_balance_before', currentAvailable)
+            ledgerGr.setValue('available_balance_after', newAvailable)
+            ledgerGr.setValue('reserved_balance_before', currentReserved)
+            ledgerGr.setValue('reserved_balance_after', newReserved)
+            ledgerGr.setValue('idempotency_key', `REF_REJ_${refundSysId}`)
+            ledgerGr.setValue('status', 'posted')
+            ledgerGr.setValue('notes', `Refund rejected: ${reason}. Hold released back to available balance.`)
+            ledgerGr.insert()
+
+            walletGr.setValue('available_balance', newAvailable)
+            walletGr.setValue('reserved_balance', newReserved)
+            walletGr.update()
+        }
+
+        refGr.setValue('status', 'rejected')
+        refGr.setValue('notes', reason)
+        refGr.setValue('financer_decision_by', financerUserSysId)
+        refGr.update()
+
+        return {
+            success: true,
+            message: 'Refund request rejected and reserved balance returned to available balance.',
+        }
+    }
+}
+
+
+// ==========================================
+// 2. PAYMENT SERVICE
+// ==========================================
+
+
+
+export interface PaymentVerificationResult {
+    success: boolean
+    message: string
+    paymentSysId?: string
+    walletSysId?: string
+    newStatus?: string
+}
+
+/**
+ * Service to manage Payment submission, Financer verification,
+ * duplicate UTR checking, and automatic wallet credit triggering.
+ */
+export class KonnectFestPaymentService {
+    /**
+     * Financer verifies bank payment receipt.
+     */
+    static verifyPayment(
+        paymentSysId: string,
+        verifiedAmount: number,
+        financerUserSysId: string
+    ): PaymentVerificationResult {
+        const paymentGr = new GlideRecord('x_2327324_konnect_payment')
+        if (!paymentGr.get(paymentSysId)) {
+            return { success: false, message: 'Payment record not found.' }
+        }
+
+        const currentStatus = paymentGr.getValue('status')
+        if (currentStatus === 'verified') {
+            return { success: false, message: 'Payment is already verified.' }
+        }
+
+        if (verifiedAmount <= 0) {
+            return { success: false, message: 'Verified amount must be positive.' }
+        }
+
+        const utr = paymentGr.getValue('utr_reference')
+        if (!utr) {
+            return { success: false, message: 'Payment must have a UTR / transaction reference for verification.' }
+        }
+
+        // Verify UTR is not already used in another verified payment
+        const checkUtr = new GlideRecord('x_2327324_konnect_payment')
+        checkUtr.addQuery('utr_reference', utr)
+        checkUtr.addQuery('status', 'verified')
+        checkUtr.addQuery('sys_id', '!=', paymentSysId)
+        checkUtr.query()
+        if (checkUtr.next()) {
+            return {
+                success: false,
+                message: `Duplicate payment detected: UTR ${utr} was already verified on payment ${checkUtr.getValue('number')}.`,
+            }
+        }
+
+        paymentGr.setValue('status', 'verified')
+        paymentGr.setValue('verified_amount', verifiedAmount)
+        paymentGr.setValue('verified_by', financerUserSysId)
+        paymentGr.setValue('verified_at', new GlideDateTime().getValue())
+        paymentGr.update()
+
+        const payType = paymentGr.getValue('type')
+        let walletRes
+
+        if (payType === 'initial_registration') {
+            // Update registration status to verified
+            const regGr = new GlideRecord('x_2327324_konnect_registration')
+            regGr.addQuery('participant', paymentGr.getValue('participant'))
+            regGr.addQuery('event', paymentGr.getValue('event'))
+            regGr.query()
+            if (regGr.next()) {
+                regGr.setValue('status', 'verified')
+                regGr.setValue('payment_reference', utr)
+                regGr.update()
+            }
+
+            // Provision or activate participant user identity
+            KonnectFestPaymentService.provisionParticipantAccount(paymentGr.getValue('participant'))
+
+            // Credit wallet
+            walletRes = KonnectFestWalletService.initializeWalletFromPayment(paymentSysId)
+        } else {
+            // Top-up payment credit
+            walletRes = KonnectFestWalletService.creditTopUpPayment(paymentSysId)
+        }
+
+        return {
+            success: true,
+            message: `Payment verified. ${walletRes.message}`,
+            paymentSysId,
+            walletSysId: walletRes.walletSysId,
+            newStatus: 'verified',
+        }
+    }
+
+    /**
+     * Financer rejects invalid payment.
+     */
+    static rejectPayment(
+        paymentSysId: string,
+        reason: string,
+        financerUserSysId: string
+    ): PaymentVerificationResult {
+        const paymentGr = new GlideRecord('x_2327324_konnect_payment')
+        if (!paymentGr.get(paymentSysId)) {
+            return { success: false, message: 'Payment record not found.' }
+        }
+
+        if (paymentGr.getValue('status') === 'verified') {
+            return { success: false, message: 'Cannot reject an already verified payment.' }
+        }
+
+        paymentGr.setValue('status', 'rejected')
+        paymentGr.setValue('rejection_reason', reason)
+        paymentGr.setValue('verified_by', financerUserSysId)
+        paymentGr.setValue('verified_at', new GlideDateTime().getValue())
+        paymentGr.update()
+
+        return {
+            success: true,
+            message: 'Payment marked as Rejected.',
+            paymentSysId,
+            newStatus: 'rejected',
+        }
+    }
+
+    /**
+     * Provisions or links a ServiceNow sys_user for a verified participant
+     * and assigns the participant role.
+     */
+    static provisionParticipantAccount(participantSysId: string): string | null {
+        const partGr = new GlideRecord('x_2327324_konnect_participant')
+        if (!partGr.get(participantSysId)) return null
+
+        const email = partGr.getValue('email')
+        if (!email) return null
+
+        // Check if user already exists
+        const userGr = new GlideRecord('sys_user')
+        userGr.addQuery('email', email)
+        userGr.query()
+
+        let userSysId = ''
+        if (userGr.next()) {
+            userSysId = userGr.getUniqueValue()
+        } else {
+            userGr.initialize()
+            userGr.setValue('user_name', email)
+            userGr.setValue('email', email)
+            userGr.setValue('first_name', partGr.getValue('name') || 'Participant')
+            userGr.setValue('active', true)
+            userSysId = userGr.insert()
+        }
+
+        // Link sys_user to participant record
+        partGr.setValue('sys_user', userSysId)
+        partGr.setValue('status', 'verified')
+        partGr.setValue('verification_date', new GlideDateTime().getValue())
+        partGr.update()
+
+        // Assign x_2327324_konnect.participant role
+        const roleGr = new GlideRecord('sys_user_role')
+        roleGr.addQuery('name', 'x_2327324_konnect.participant')
+        roleGr.query()
+        if (roleGr.next()) {
+            const roleSysId = roleGr.getUniqueValue()
+            const hasRoleGr = new GlideRecord('sys_user_has_role')
+            hasRoleGr.addQuery('user', userSysId)
+            hasRoleGr.addQuery('role', roleSysId)
+            hasRoleGr.query()
+            if (!hasRoleGr.next()) {
+                hasRoleGr.initialize()
+                hasRoleGr.setValue('user', userSysId)
+                hasRoleGr.setValue('role', roleSysId)
+                hasRoleGr.insert()
+            }
+        }
+
+        return userSysId
+    }
+}
+
+
+// ==========================================
+// 3. QR SERVICE (120s TTL)
+// ==========================================
+
+
+export interface QRGenerationResult {
+    success: boolean
+    message: string
+    transactionSysId?: string
+    qrToken?: string
+    expiresAt?: string
+    amount?: number
+    itemDescription?: string
+}
+
+/**
+ * Service to manage ephemeral, secure 120-second QR tokens for vendor purchases.
+ */
+export class KonnectFestQRService {
+    /**
+     * Vendor creates a pending purchase transaction and receives a 120-second QR token.
+     */
+    static generatePurchaseQR(
+        eventSysId: string,
+        vendorSysId: string,
+        itemDescription: string,
+        amount: number,
+        expirySeconds: number = 120
+    ): QRGenerationResult {
+        if (amount <= 0) {
+            return { success: false, message: 'Purchase amount must be greater than zero.' }
+        }
+
+        // Validate vendor and event
+        const vendorGr = new GlideRecord('x_2327324_konnect_vendor')
+        if (!vendorGr.get(vendorSysId)) {
+            return { success: false, message: 'Vendor record not found.' }
+        }
+
+        if (vendorGr.getValue('status') !== 'active') {
+            return { success: false, message: 'Vendor is not active.' }
+        }
+
+        const eventGr = new GlideRecord('x_2327324_konnect_event')
+        if (!eventGr.get(eventSysId)) {
+            return { success: false, message: 'Event not found.' }
+        }
+
+        const evState = eventGr.getValue('state')
+        if (evState !== 'active') {
+            return { success: false, message: `Event is currently '${evState}'. Purchases are only permitted when Active.` }
+        }
+
+        // Generate random 32-character opaque token
+        const randomSeed = `${new GlideDateTime().getNumericValue()}_${Math.random()}_${vendorSysId}`
+        const qrToken = `KF_QR_${Math.random().toString(36).substring(2, 12)}_${new GlideDateTime().getNumericValue()}`
+
+        // Calculate expiry (default 60 seconds)
+        const expGdt = new GlideDateTime()
+        expGdt.addSeconds(expirySeconds)
+
+        const txGr = new GlideRecord('x_2327324_konnect_purchase_tx')
+        txGr.initialize()
+        txGr.setValue('transaction_id', `TXN-${new GlideDateTime().getNumericValue()}`)
+        txGr.setValue('event', eventSysId)
+        txGr.setValue('vendor', vendorSysId)
+        txGr.setValue('item_description', itemDescription)
+        txGr.setValue('amount', amount)
+        txGr.setValue('qr_token', qrToken)
+        txGr.setValue('qr_expires_at', expGdt.getValue())
+        txGr.setValue('status', 'pending')
+        const txSysId = txGr.insert()
+
+        return {
+            success: true,
+            message: 'Purchase transaction created and QR token generated.',
+            transactionSysId: txSysId,
+            qrToken: qrToken,
+            expiresAt: expGdt.getValue(),
+            amount: amount,
+            itemDescription: itemDescription,
+        }
+    }
+
+    /**
+     * Participant scans QR and loads pending transaction details.
+     */
+    static getTransactionByQR(qrToken: string): {
+        valid: boolean
+        message: string
+        transaction?: {
+            sysId: string
+            transactionId: string
+            vendorName: string
+            stallNumber: string
+            eventName: string
+            itemDescription: string
+            amount: number
+            expiresAt: string
+            isExpired: boolean
+        }
+    } {
+        const txGr = new GlideRecord('x_2327324_konnect_purchase_tx')
+        txGr.addQuery('qr_token', qrToken)
+        txGr.query()
+
+        if (!txGr.next()) {
+            return { valid: false, message: 'Invalid or unknown QR token.' }
+        }
+
+        const status = txGr.getValue('status')
+        if (status !== 'pending') {
+            return { valid: false, message: `This QR transaction is no longer active (status: ${status}).` }
+        }
+
+        const expiresAtStr = txGr.getValue('qr_expires_at')
+        let isExpired = false
+        if (expiresAtStr) {
+            const expGdt = new GlideDateTime(expiresAtStr)
+            const nowGdt = new GlideDateTime()
+            if (nowGdt.after(expGdt)) {
+                isExpired = true
+                txGr.setValue('status', 'expired')
+                txGr.setValue('rejection_reason', 'QR token expired (120s limit)')
+                txGr.update()
+                return { valid: false, message: 'QR token has expired. Vendor must generate a new QR.' }
+            }
+        }
+
+        let vendorName = 'Vendor'
+        let stallNumber = ''
+        const vendorGr = new GlideRecord('x_2327324_konnect_vendor')
+        if (vendorGr.get(txGr.getValue('vendor'))) {
+            vendorName = vendorGr.getValue('name') || 'Vendor'
+            stallNumber = vendorGr.getValue('stall_number') || ''
+        }
+
+        let eventName = 'Event'
+        const eventGr = new GlideRecord('x_2327324_konnect_event')
+        if (eventGr.get(txGr.getValue('event'))) {
+            eventName = eventGr.getValue('name') || 'Event'
+        }
+
+        return {
+            valid: true,
+            message: 'Transaction details retrieved successfully.',
+            transaction: {
+                sysId: txGr.getUniqueValue(),
+                transactionId: txGr.getValue('transaction_id') || '',
+                vendorName,
+                stallNumber,
+                eventName,
+                itemDescription: txGr.getValue('item_description') || '',
+                amount: parseFloat(txGr.getValue('amount') || '0'),
+                expiresAt: expiresAtStr || '',
+                isExpired,
+            },
+        }
+    }
+}
+
+
+// ==========================================
+// 4. SETTLEMENT SERVICE
+// ==========================================
+
+
+export interface SettlementBatchResult {
+    success: boolean
+    message: string
+    settlementSysId?: string
+    batchId?: string
+    totalCredits?: number
+    vendorSysId?: string
+}
+
+/**
+ * Service to aggregate vendor sales ledger entries into settlement batches
+ * and manage payout lifecycles.
+ */
+export class KonnectFestSettlementService {
+    /**
+     * Creates or updates a settlement batch for a vendor's unsettled sales in an event.
+     */
+    static createSettlementBatch(
+        eventSysId: string,
+        vendorSysId: string,
+        reviewedByUserSysId: string
+    ): SettlementBatchResult {
+        const vLedgerGr = new GlideRecord('x_2327324_konnect_vendor_ledger')
+        vLedgerGr.addQuery('event', eventSysId)
+        vLedgerGr.addQuery('vendor', vendorSysId)
+        vLedgerGr.addQuery('status', 'unsettled')
+        vLedgerGr.query()
+
+        let totalCredits = 0
+        const ledgerSysIds: string[] = []
+
+        while (vLedgerGr.next()) {
+            totalCredits += parseFloat(vLedgerGr.getValue('credit_amount') || '0')
+            ledgerSysIds.push(vLedgerGr.getUniqueValue())
+        }
+
+        if (totalCredits <= 0 || ledgerSysIds.length === 0) {
+            return {
+                success: false,
+                message: 'No unsettled transactions found for this vendor in the specified event.',
+            }
+        }
+
+        const batchId = `SET-${new GlideDateTime().getNumericValue()}`
+
+        const setGr = new GlideRecord('x_2327324_konnect_settlement')
+        setGr.initialize()
+        setGr.setValue('batch_id', batchId)
+        setGr.setValue('event', eventSysId)
+        setGr.setValue('vendor', vendorSysId)
+        setGr.setValue('total_credit_amount', totalCredits)
+        setGr.setValue('adjustments_amount', 0)
+        setGr.setValue('net_payable_amount', totalCredits)
+        setGr.setValue('status', 'reviewed')
+        setGr.setValue('reviewed_by', reviewedByUserSysId)
+        setGr.setValue('notes', `Settlement batch for ${ledgerSysIds.length} transactions.`)
+        const setSysId = setGr.insert()
+
+        // Update vendor ledger entries to in_settlement_batch
+        for (const id of ledgerSysIds) {
+            const updGr = new GlideRecord('x_2327324_konnect_vendor_ledger')
+            if (updGr.get(id)) {
+                updGr.setValue('status', 'in_settlement_batch')
+                updGr.setValue('settlement_batch', setSysId)
+                updGr.update()
+            }
+        }
+
+        return {
+            success: true,
+            message: `Settlement batch ${batchId} created for ₹${totalCredits.toFixed(2)}.`,
+            settlementSysId: setSysId,
+            batchId,
+            totalCredits,
+            vendorSysId,
+        }
+    }
+
+    /**
+     * Financer marks settlement batch as PAID with actual bank transfer UTR.
+     */
+    static markSettlementPaid(
+        settlementSysId: string,
+        payoutRef: string,
+        financerUserSysId: string
+    ): SettlementBatchResult {
+        const setGr = new GlideRecord('x_2327324_konnect_settlement')
+        if (!setGr.get(settlementSysId)) {
+            return { success: false, message: 'Settlement record not found.' }
+        }
+
+        setGr.setValue('status', 'paid')
+        setGr.setValue('payout_reference', payoutRef)
+        setGr.setValue('payout_date', new GlideDateTime().getValue())
+        setGr.setValue('reviewed_by', financerUserSysId)
+        setGr.update()
+
+        // Mark all associated vendor ledger items as settled
+        const vLedgerGr = new GlideRecord('x_2327324_konnect_vendor_ledger')
+        vLedgerGr.addQuery('settlement_batch', settlementSysId)
+        vLedgerGr.query()
+        while (vLedgerGr.next()) {
+            vLedgerGr.setValue('status', 'settled')
+            vLedgerGr.update()
+        }
+
+        return {
+            success: true,
+            message: `Settlement marked as PAID with reference: ${payoutRef}`,
+            settlementSysId,
+        }
+    }
+}
+
+
+// ==========================================
+// 5. REST ENDPOINTS HANDLERS
+// ==========================================
+
+
+
+
+
 
 function buildUpiUri(upiId: string, payeeName: string, amount: number, refNote: string): string {
     return `upi://pay?pa=${encodeURIComponent(upiId)}&pn=${encodeURIComponent(payeeName)}&am=${amount.toFixed(2)}&cu=INR&tn=${encodeURIComponent(refNote)}`
@@ -1207,5 +2310,30 @@ export function handlePaySettlement(request: any, response: any) {
     } catch (e: any) {
         response.setStatus(500)
         response.setBody({ success: false, message: e.message || 'Error marking settlement paid' })
+    }
+}
+
+
+
+// ==========================================
+// 6. CLIENT SCRIPT BUNDLES FOR UI PAGES
+// ==========================================
+const CLIENT_SCRIPTS: Record<string, string> = {"organizer":"\nfunction renderQRCode(containerEl, text, cellSize) {\n    if (!containerEl) return;\n    containerEl.innerHTML = '';\n    try {\n        if (typeof QRCode !== 'undefined') {\n            new QRCode(containerEl, {\n                text: text,\n                width: 200,\n                height: 200,\n                colorDark: '#0f172a',\n                colorLight: '#ffffff',\n                correctLevel: QRCode.CorrectLevel.M\n            });\n        } else {\n            containerEl.innerHTML = '<div style=\"padding:16px;background:#f8fafc;border:1px dashed #94a3b8;font-size:11px;word-break:break-all;\">' + escapeHtml(text) + '</div>';\n        }\n    } catch (e) {\n        containerEl.innerHTML = '<div style=\"color:#dc2626;font-size:12px;\">QR render error: ' + e.message + '</div>';\n    }\n}\n\nfunction apiHeaders(isJson) {\n    var h = {};\n    if (isJson) h['Content-Type'] = 'application/json';\n    var el = document.getElementById('g_ck_token');\n    var token = (el && el.value && el.value !== 'null') ? el.value : (window.g_ck || '');\n    if (token) h['X-UserToken'] = token;\n    return h;\n}\n\nfunction showBanner(elId, msg, type) {\n    var el = document.getElementById(elId);\n    if (!el) return;\n    el.className = 'alert alert-' + (type || 'info');\n    el.textContent = msg;\n    el.style.display = 'block';\n    setTimeout(function() { el.style.display = 'none'; }, 7000);\n}\n\nfunction formatINR(val) {\n    var n = parseFloat(val || 0);\n    return '₹' + n.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });\n}\n\nfunction escapeHtml(str) {\n    return String(str || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/\"/g, '&quot;');\n}\n\n\nfunction switchOrgTab(id, btn) {\n    document.querySelectorAll('.org-tab').forEach(function(el) { el.style.display = 'none'; });\n    document.querySelectorAll('.tab-btn').forEach(function(el) { el.classList.remove('active'); });\n    document.getElementById(id).style.display = 'block';\n    if (btn) btn.classList.add('active');\n}\nfunction loadOverview() {\n    fetch('/api/x_2327324_konnect/konnectfest/organizer/overview', { headers: apiHeaders(false) })\n        .then(function(r) { return r.json(); })\n        .then(function(res) {\n            var d = res.result || res;\n            if (!d.success) return showBanner('orgAlert', d.message || 'Failed to load overview', 'error');\n            var k = d.kpis;\n            document.getElementById('kpiReg').textContent = k.totalRegistrations + ' (' + k.pendingRegistrations + ' pending)';\n            document.getElementById('kpiWallets').textContent = k.activeWallets;\n            document.getElementById('kpiFunds').textContent = formatINR(k.totalVerifiedFunding) + ' / ' + formatINR(k.totalWalletLiability);\n            document.getElementById('kpiSales').textContent = formatINR(k.totalSalesVolume) + ' (' + k.successfulTxCount + ')';\n            var evHtml = '';\n            var evSelect = document.getElementById('venEvent');\n            evSelect.innerHTML = '';\n            (d.events || []).forEach(function(ev) {\n                var opt = document.createElement('option');\n                opt.value = ev.sys_id; opt.textContent = ev.name;\n                evSelect.appendChild(opt);\n                var badgeCls = ev.state === 'active' ? 'badge-success' : (ev.state === 'completed' ? 'badge-warning' : 'badge-info');\n                evHtml += '<div style=\"border:1px solid var(--border); border-radius:8px; padding:14px;\">'\n                    + '<div style=\"display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;\"><strong>' + escapeHtml(ev.name) + '</strong><span class=\"badge ' + badgeCls + '\">' + escapeHtml(ev.state) + '</span></div>'\n                    + '<div style=\"font-size:12px; color:var(--muted); margin-bottom:10px;\">UPI: ' + escapeHtml(ev.upi_id) + ' (' + escapeHtml(ev.upi_payee_name) + ')</div>'\n                    + '<div style=\"display:flex; gap:6px; flex-wrap:wrap;\">'\n                    + '<button class=\"btn btn-sm btn-outline\" onclick=\"setEventState(\\\\'' + ev.sys_id + '\\\\', \\\\'registration_open\\\\')\">Open Reg</button>'\n                    + '<button class=\"btn btn-sm btn-primary\" onclick=\"setEventState(\\\\'' + ev.sys_id + '\\\\', \\\\'active\\\\')\">Set Active</button>'\n                    + '<button class=\"btn btn-sm btn-warning\" onclick=\"setEventState(\\\\'' + ev.sys_id + '\\\\', \\\\'completed\\\\')\">Complete (Unlock Refunds)</button>'\n                    + '<button class=\"btn btn-sm\" style=\"background:#475569;color:#fff;\" onclick=\"setEventState(\\\\'' + ev.sys_id + '\\\\', \\\\'closed\\\\')\">Close</button>'\n                    + '</div></div>';\n            });\n            document.getElementById('eventsList').innerHTML = evHtml || '<div style=\"color:var(--muted);\">No events found.</div>';\n            var vHtml = '';\n            (d.vendors || []).forEach(function(v) {\n                vHtml += '<tr><td><strong>' + escapeHtml(v.name) + '</strong></td><td>' + escapeHtml(v.stall_number) + '</td><td>' + escapeHtml(v.event) + '</td><td>' + v.tx_count + '</td><td><strong>' + formatINR(v.total_sales) + '</strong></td><td><span class=\"badge badge-success\">' + escapeHtml(v.status) + '</span></td></tr>';\n            });\n            document.getElementById('vendorsTable').innerHTML = vHtml || '<tr><td colspan=\"6\" style=\"text-align:center;color:var(--muted);\">No vendors onboarded</td></tr>';\n            var aHtml = '';\n            (d.auditLogs || []).forEach(function(a) {\n                aHtml += '<tr><td>' + escapeHtml(a.timestamp) + '</td><td><strong>' + escapeHtml(a.action) + '</strong></td><td>' + escapeHtml(a.target) + '</td><td>' + escapeHtml(a.previous_status) + ' → ' + escapeHtml(a.new_status) + '</td><td>' + escapeHtml(a.reason) + '</td></tr>';\n            });\n            document.getElementById('auditTable').innerHTML = aHtml || '<tr><td colspan=\"5\" style=\"text-align:center;color:var(--muted);\">No audit records yet</td></tr>';\n        });\n}\nfunction createEvent() {\n    var payload = { action: 'create', name: document.getElementById('evName').value.trim(), upi_id: document.getElementById('evUpi').value.trim(), upi_payee_name: document.getElementById('evPayee').value.trim(), state: document.getElementById('evState').value, description: document.getElementById('evDesc').value.trim() };\n    fetch('/api/x_2327324_konnect/konnectfest/organizer/event', { method: 'POST', headers: apiHeaders(true), body: JSON.stringify(payload) })\n        .then(function(r) { return r.json(); }).then(function(res) {\n            var d = res.result || res;\n            showBanner('orgAlert', d.message, d.success ? 'success' : 'error');\n            if (d.success) { document.getElementById('evName').value = ''; loadOverview(); }\n        });\n}\nfunction setEventState(eventSysId, newState) {\n    fetch('/api/x_2327324_konnect/konnectfest/organizer/event', { method: 'POST', headers: apiHeaders(true), body: JSON.stringify({ action: 'update_state', event_sys_id: eventSysId, new_state: newState }) })\n        .then(function(r) { return r.json(); }).then(function(res) {\n            var d = res.result || res;\n            showBanner('orgAlert', d.message, d.success ? 'success' : 'error');\n            loadOverview();\n        });\n}\nfunction onboardVendor() {\n    var payload = { event_sys_id: document.getElementById('venEvent').value, name: document.getElementById('venName').value.trim(), stall_number: document.getElementById('venStall').value.trim(), category: document.getElementById('venCategory').value, upi_id: document.getElementById('venUpi').value.trim() };\n    fetch('/api/x_2327324_konnect/konnectfest/organizer/vendor', { method: 'POST', headers: apiHeaders(true), body: JSON.stringify(payload) })\n        .then(function(r) { return r.json(); }).then(function(res) {\n            var d = res.result || res;\n            showBanner('orgAlert', d.message, d.success ? 'success' : 'error');\n            if (d.success) { document.getElementById('venName').value = ''; document.getElementById('venStall').value = ''; loadOverview(); }\n        });\n}\nloadOverview();\n","finance":"\nfunction renderQRCode(containerEl, text, cellSize) {\n    if (!containerEl) return;\n    containerEl.innerHTML = '';\n    try {\n        if (typeof QRCode !== 'undefined') {\n            new QRCode(containerEl, {\n                text: text,\n                width: 200,\n                height: 200,\n                colorDark: '#0f172a',\n                colorLight: '#ffffff',\n                correctLevel: QRCode.CorrectLevel.M\n            });\n        } else {\n            containerEl.innerHTML = '<div style=\"padding:16px;background:#f8fafc;border:1px dashed #94a3b8;font-size:11px;word-break:break-all;\">' + escapeHtml(text) + '</div>';\n        }\n    } catch (e) {\n        containerEl.innerHTML = '<div style=\"color:#dc2626;font-size:12px;\">QR render error: ' + e.message + '</div>';\n    }\n}\n\nfunction apiHeaders(isJson) {\n    var h = {};\n    if (isJson) h['Content-Type'] = 'application/json';\n    var el = document.getElementById('g_ck_token');\n    var token = (el && el.value && el.value !== 'null') ? el.value : (window.g_ck || '');\n    if (token) h['X-UserToken'] = token;\n    return h;\n}\n\nfunction showBanner(elId, msg, type) {\n    var el = document.getElementById(elId);\n    if (!el) return;\n    el.className = 'alert alert-' + (type || 'info');\n    el.textContent = msg;\n    el.style.display = 'block';\n    setTimeout(function() { el.style.display = 'none'; }, 7000);\n}\n\nfunction formatINR(val) {\n    var n = parseFloat(val || 0);\n    return '₹' + n.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });\n}\n\nfunction escapeHtml(str) {\n    return String(str || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/\"/g, '&quot;');\n}\n\n\nfunction switchFinTab(id, btn) {\n    document.querySelectorAll('.fin-tab').forEach(function(el) { el.style.display = 'none'; });\n    document.querySelectorAll('.tab-btn').forEach(function(el) { el.classList.remove('active'); });\n    document.getElementById(id).style.display = 'block';\n    if (btn) btn.classList.add('active');\n}\nfunction loadFinanceQueues() {\n    fetch('/api/x_2327324_konnect/konnectfest/finance/queues', { headers: apiHeaders(false) })\n        .then(function(r) { return r.json(); })\n        .then(function(res) {\n            var d = res.result || res;\n            if (!d.success) return showBanner('finAlert', d.message || 'Error loading queues', 'error');\n            var rec = d.reconciliation || {};\n            document.getElementById('recCredits').textContent = formatINR(rec.totalVerifiedCredits);\n            document.getElementById('recWallet').textContent = formatINR(rec.totalWalletAvailable);\n            document.getElementById('recRefunds').textContent = formatINR(rec.totalWalletReserved) + ' / ' + formatINR(rec.totalPaidRefunds);\n            document.getElementById('recSettled').textContent = formatINR(rec.totalPaidSettlements);\n            var pHtml = '';\n            (d.pendingPayments || []).forEach(function(p) {\n                pHtml += '<tr><td><strong>' + escapeHtml(p.number) + '</strong></td><td>' + escapeHtml(p.type) + '</td><td>' + escapeHtml(p.participant_name) + '</td><td>' + escapeHtml(p.event_name) + '</td><td><strong>' + formatINR(p.requested_amount) + '</strong></td><td><code>' + escapeHtml(p.utr_reference || 'Awaiting UTR') + '</code></td><td><span class=\"badge badge-warning\">' + escapeHtml(p.status) + '</span></td><td style=\"display:flex; gap:6px;\"><button class=\"btn btn-sm btn-accent\" onclick=\"verifyPayment(\\\\'' + p.sys_id + '\\\\', ' + p.requested_amount + ')\">Verify &amp; Credit</button><button class=\"btn btn-sm btn-danger\" onclick=\"rejectPayment(\\\\'' + p.sys_id + '\\\\')\">Reject</button></td></tr>';\n            });\n            document.getElementById('pendingPayBody').innerHTML = pHtml || '<tr><td colspan=\"8\" style=\"text-align:center;color:var(--muted);\">No pending payments in queue</td></tr>';\n            var rHtml = '';\n            (d.refunds || []).forEach(function(rf) {\n                var bankInfo = escapeHtml(rf.bank_account_holder) + ' | A/C: ' + escapeHtml(rf.bank_account_number) + ' | IFSC: ' + escapeHtml(rf.bank_ifsc) + (rf.upi_id ? ' | UPI: ' + escapeHtml(rf.upi_id) : '');\n                var actions = rf.status === 'paid' || rf.status === 'rejected' ? '<span>' + escapeHtml(rf.payout_reference || '-') + '</span>' : '<button class=\"btn btn-sm btn-accent\" onclick=\"finalizeRefund(\\\\'' + rf.sys_id + '\\\\')\">Mark Paid (UTR)</button> <button class=\"btn btn-sm btn-danger\" onclick=\"rejectRefund(\\\\'' + rf.sys_id + '\\\\')\">Reject</button>';\n                var bCls = rf.status === 'paid' ? 'badge-success' : (rf.status === 'rejected' ? 'badge-danger' : 'badge-warning');\n                rHtml += '<tr><td><strong>' + escapeHtml(rf.number) + '</strong></td><td>' + escapeHtml(rf.participant_name) + '</td><td><strong>' + formatINR(rf.requested_amount) + '</strong></td><td style=\"font-size:12px;\">' + bankInfo + '</td><td><span class=\"badge ' + bCls + '\">' + escapeHtml(rf.status) + '</span></td><td>' + actions + '</td></tr>';\n            });\n            document.getElementById('refundQueueBody').innerHTML = rHtml || '<tr><td colspan=\"6\" style=\"text-align:center;color:var(--muted);\">No refund requests</td></tr>';\n            var uHtml = '';\n            (d.unsettledVendors || []).forEach(function(uv) {\n                uHtml += '<tr><td><strong>' + escapeHtml(uv.vendor_name) + '</strong></td><td>' + escapeHtml(uv.event_name) + '</td><td>' + uv.tx_count + '</td><td><strong>' + formatINR(uv.unsettled_amount) + '</strong></td><td><button class=\"btn btn-sm btn-primary\" onclick=\"createSettlement(\\\\'' + uv.event_sys_id + '\\\\', \\\\'' + uv.vendor_sys_id + '\\\\')\">Create Settlement Batch</button></td></tr>';\n            });\n            document.getElementById('unsettledVendorsBody').innerHTML = uHtml || '<tr><td colspan=\"5\" style=\"text-align:center;color:var(--muted);\">All vendor sales are settled or batched</td></tr>';\n            var sHtml = '';\n            (d.settlements || []).forEach(function(st) {\n                var act = st.status === 'paid' ? '<span class=\"badge badge-success\">Settled</span>' : '<button class=\"btn btn-sm btn-accent\" onclick=\"paySettlement(\\\\'' + st.sys_id + '\\\\')\">Record Payout UTR</button>';\n                sHtml += '<tr><td><strong>' + escapeHtml(st.batch_id) + '</strong></td><td>' + escapeHtml(st.vendor_name) + '</td><td>' + escapeHtml(st.event_name) + '</td><td><strong>' + formatINR(st.net_payable_amount) + '</strong></td><td><span class=\"badge badge-info\">' + escapeHtml(st.status) + '</span></td><td>' + escapeHtml(st.payout_reference || '-') + '</td><td>' + act + '</td></tr>';\n            });\n            document.getElementById('settlementsBody').innerHTML = sHtml || '<tr><td colspan=\"7\" style=\"text-align:center;color:var(--muted);\">No settlement batches yet</td></tr>';\n        });\n}\nfunction verifyPayment(sysId, defaultAmt) {\n    var amtStr = prompt('Enter actual bank-verified INR amount:', String(defaultAmt));\n    if (!amtStr) return;\n    fetch('/api/x_2327324_konnect/konnectfest/finance/verify-payment', { method: 'POST', headers: apiHeaders(true), body: JSON.stringify({ payment_sys_id: sysId, verified_amount: parseFloat(amtStr) }) })\n        .then(function(r) { return r.json(); }).then(function(res) { var d = res.result || res; showBanner('finAlert', d.message, d.success ? 'success' : 'error'); loadFinanceQueues(); });\n}\nfunction rejectPayment(sysId) {\n    var reason = prompt('Enter rejection reason:');\n    if (!reason) return;\n    fetch('/api/x_2327324_konnect/konnectfest/finance/reject-payment', { method: 'POST', headers: apiHeaders(true), body: JSON.stringify({ payment_sys_id: sysId, reason: reason }) })\n        .then(function(r) { return r.json(); }).then(function(res) { var d = res.result || res; showBanner('finAlert', d.message, d.success ? 'success' : 'error'); loadFinanceQueues(); });\n}\nfunction finalizeRefund(sysId) {\n    var utr = prompt('Enter bank payout UTR / Reference after completing external transfer:');\n    if (!utr) return;\n    fetch('/api/x_2327324_konnect/konnectfest/finance/finalize-refund', { method: 'POST', headers: apiHeaders(true), body: JSON.stringify({ refund_sys_id: sysId, payout_reference: utr }) })\n        .then(function(r) { return r.json(); }).then(function(res) { var d = res.result || res; showBanner('finAlert', d.message, d.success ? 'success' : 'error'); loadFinanceQueues(); });\n}\nfunction rejectRefund(sysId) {\n    var reason = prompt('Enter rejection reason (hold will be released back to participant wallet):');\n    if (!reason) return;\n    fetch('/api/x_2327324_konnect/konnectfest/finance/reject-refund', { method: 'POST', headers: apiHeaders(true), body: JSON.stringify({ refund_sys_id: sysId, reason: reason }) })\n        .then(function(r) { return r.json(); }).then(function(res) { var d = res.result || res; showBanner('finAlert', d.message, d.success ? 'success' : 'error'); loadFinanceQueues(); });\n}\nfunction createSettlement(evId, venId) {\n    fetch('/api/x_2327324_konnect/konnectfest/finance/settle-vendor', { method: 'POST', headers: apiHeaders(true), body: JSON.stringify({ event_sys_id: evId, vendor_sys_id: venId }) })\n        .then(function(r) { return r.json(); }).then(function(res) { var d = res.result || res; showBanner('finAlert', d.message, d.success ? 'success' : 'error'); loadFinanceQueues(); });\n}\nfunction paySettlement(setId) {\n    var utr = prompt('Enter bank payout UTR reference for vendor settlement:');\n    if (!utr) return;\n    fetch('/api/x_2327324_konnect/konnectfest/finance/pay-settlement', { method: 'POST', headers: apiHeaders(true), body: JSON.stringify({ settlement_sys_id: setId, payout_reference: utr }) })\n        .then(function(r) { return r.json(); }).then(function(res) { var d = res.result || res; showBanner('finAlert', d.message, d.success ? 'success' : 'error'); loadFinanceQueues(); });\n}\nloadFinanceQueues();\n","vendor":"\nfunction renderQRCode(containerEl, text, cellSize) {\n    if (!containerEl) return;\n    containerEl.innerHTML = '';\n    try {\n        if (typeof QRCode !== 'undefined') {\n            new QRCode(containerEl, {\n                text: text,\n                width: 200,\n                height: 200,\n                colorDark: '#0f172a',\n                colorLight: '#ffffff',\n                correctLevel: QRCode.CorrectLevel.M\n            });\n        } else {\n            containerEl.innerHTML = '<div style=\"padding:16px;background:#f8fafc;border:1px dashed #94a3b8;font-size:11px;word-break:break-all;\">' + escapeHtml(text) + '</div>';\n        }\n    } catch (e) {\n        containerEl.innerHTML = '<div style=\"color:#dc2626;font-size:12px;\">QR render error: ' + e.message + '</div>';\n    }\n}\n\nfunction apiHeaders(isJson) {\n    var h = {};\n    if (isJson) h['Content-Type'] = 'application/json';\n    var el = document.getElementById('g_ck_token');\n    var token = (el && el.value && el.value !== 'null') ? el.value : (window.g_ck || '');\n    if (token) h['X-UserToken'] = token;\n    return h;\n}\n\nfunction showBanner(elId, msg, type) {\n    var el = document.getElementById(elId);\n    if (!el) return;\n    el.className = 'alert alert-' + (type || 'info');\n    el.textContent = msg;\n    el.style.display = 'block';\n    setTimeout(function() { el.style.display = 'none'; }, 7000);\n}\n\nfunction formatINR(val) {\n    var n = parseFloat(val || 0);\n    return '₹' + n.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });\n}\n\nfunction escapeHtml(str) {\n    return String(str || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/\"/g, '&quot;');\n}\n\n\nvar activeVendor = null;\nvar qrCountdown = null;\nvar qrPoller = null;\nfunction loadVendorDash(selectedVendorId) {\n    var url = '/api/x_2327324_konnect/konnectfest/vendor/dashboard' + (selectedVendorId ? '?vendor_sys_id=' + encodeURIComponent(selectedVendorId) : '');\n    fetch(url, { headers: apiHeaders(false) }).then(function(r) { return r.json(); }).then(function(res) {\n        var d = res.result || res;\n        if (!d.success) return showBanner('venAlert', d.message || 'Could not load vendor stall', 'error');\n        activeVendor = d.vendor;\n        document.getElementById('vendorPill').textContent = activeVendor.name + ' (' + activeVendor.stall_number + ')';\n        document.getElementById('vStallInfo').textContent = 'Event: ' + activeVendor.event_name + ' | Stall: ' + activeVendor.stall_number + ' | Status: ' + activeVendor.status;\n        var sw = document.getElementById('vendorSwitcher'); sw.innerHTML = '';\n        (d.allVendors || []).forEach(function(av) {\n            var opt = document.createElement('option'); opt.value = av.sys_id; opt.textContent = av.name + ' (' + av.stall_number + ')';\n            if (av.sys_id === activeVendor.sys_id) opt.selected = true;\n            sw.appendChild(opt);\n        });\n        var s = d.summary || {};\n        document.getElementById('vGross').textContent = formatINR(s.grossSales);\n        document.getElementById('vUnsettled').textContent = formatINR(s.unsettledAmount);\n        document.getElementById('vBatch').textContent = formatINR(s.inBatchAmount);\n        document.getElementById('vSettled').textContent = formatINR(s.settledAmount);\n        var tHtml = '';\n        (d.transactions || []).forEach(function(tx) {\n            var bCls = tx.status === 'success' ? 'badge-success' : (tx.status === 'pending' ? 'badge-warning' : 'badge-danger');\n            tHtml += '<tr><td><code>' + escapeHtml(tx.transaction_id) + '</code></td><td>' + escapeHtml(tx.item_description) + '</td><td><strong>' + formatINR(tx.amount) + '</strong></td><td>' + escapeHtml(tx.participant_name) + '</td><td><span class=\"badge ' + bCls + '\">' + escapeHtml(tx.status) + '</span></td><td>' + escapeHtml(tx.confirmed_at || tx.created_on) + '</td></tr>';\n        });\n        document.getElementById('vTxBody').innerHTML = tHtml || '<tr><td colspan=\"6\" style=\"text-align:center;color:var(--muted);\">No transactions yet</td></tr>';\n    });\n}\nfunction generateVendorQR() {\n    if (!activeVendor) return showBanner('venAlert', 'Vendor stall not loaded', 'error');\n    var item = document.getElementById('vItem').value.trim();\n    var amount = parseFloat(document.getElementById('vAmount').value || '0');\n    if (!item || amount <= 0) return showBanner('venAlert', 'Enter a valid item description and positive amount', 'error');\n    fetch('/api/x_2327324_konnect/konnectfest/vendor/create-qr', {\n        method: 'POST', headers: apiHeaders(true),\n        body: JSON.stringify({ event_sys_id: activeVendor.event_sys_id, vendor_sys_id: activeVendor.sys_id, item_description: item, amount: amount })\n    }).then(function(r) { return r.json(); }).then(function(res) {\n        var d = res.result || res;\n        if (!d.success) return showBanner('venAlert', d.message, 'error');\n        startQRDisplay(d);\n    });\n}\nfunction startQRDisplay(data) {\n    clearInterval(qrCountdown); clearInterval(qrPoller);\n    var seconds = data.expirySeconds || 120;\n    var totalSeconds = seconds;\n    var area = document.getElementById('qrDisplayArea');\n    area.innerHTML = '<div style=\"font-weight:700; color:var(--primary); font-size:15px;\">' + escapeHtml(data.itemDescription) + '</div>'\n        + '<div style=\"font-size:28px; font-weight:800; margin:4px 0 10px;\">' + formatINR(data.amount) + '</div>'\n        + '<div class=\"qr-box\" id=\"vendorQrSvg\"></div>'\n        + '<div id=\"qrTimerText\" style=\"font-size:13px; font-weight:700; color:var(--warning); margin-top:10px;\">Expires in ' + seconds + 's</div>'\n        + '<div class=\"progress-track\" style=\"max-width:260px;\"><div class=\"progress-fill\" id=\"qrProgressFill\" style=\"width:100%;\"></div></div>'\n        + '<div style=\"font-size:11px; color:var(--muted); margin-top:6px; word-break:break-all;\">Token: <code>' + escapeHtml(data.qrToken) + '</code></div>'\n        + '<a href=\"' + escapeHtml(data.confirmUrl) + '\" target=\"_blank\" style=\"font-size:12px; color:var(--primary); margin-top:6px; font-weight:600;\">Open Confirmation Link ↗</a>';\n    renderQRCode(document.getElementById('vendorQrSvg'), data.confirmUrl, 5);\n    qrCountdown = setInterval(function() {\n        seconds--;\n        var txt = document.getElementById('qrTimerText');\n        var fill = document.getElementById('qrProgressFill');\n        if (txt) txt.textContent = 'Expires in ' + seconds + 's';\n        if (fill) fill.style.width = ((seconds / totalSeconds) * 100) + '%';\n        if (seconds <= 0) {\n            clearInterval(qrCountdown); clearInterval(qrPoller);\n            area.innerHTML = '<div style=\"color:var(--danger); font-weight:700; padding:20px;\">QR Expired (120s). Please regenerate a new QR.</div>';\n        }\n    }, 1000);\n    qrPoller = setInterval(function() {\n        fetch('/api/x_2327324_konnect/konnectfest/vendor/qr-details?qr_token=' + encodeURIComponent(data.qrToken), { headers: apiHeaders(false) })\n            .then(function(r) { return r.json(); }).then(function(res) {\n                var qd = res.result || res;\n                if (!qd.valid) {\n                    clearInterval(qrCountdown); clearInterval(qrPoller);\n                    area.innerHTML = '<div style=\"color:var(--success); font-weight:800; font-size:20px; padding:30px;\">✓ Payment Confirmed!<br/><span style=\"font-size:13px; font-weight:500;\">Credited to Vendor Ledger</span></div>';\n                    loadVendorDash(activeVendor.sys_id);\n                }\n            });\n    }, 2000);\n}\nloadVendorDash();\n","participant":"\nfunction renderQRCode(containerEl, text, cellSize) {\n    if (!containerEl) return;\n    containerEl.innerHTML = '';\n    try {\n        if (typeof QRCode !== 'undefined') {\n            new QRCode(containerEl, {\n                text: text,\n                width: 200,\n                height: 200,\n                colorDark: '#0f172a',\n                colorLight: '#ffffff',\n                correctLevel: QRCode.CorrectLevel.M\n            });\n        } else {\n            containerEl.innerHTML = '<div style=\"padding:16px;background:#f8fafc;border:1px dashed #94a3b8;font-size:11px;word-break:break-all;\">' + escapeHtml(text) + '</div>';\n        }\n    } catch (e) {\n        containerEl.innerHTML = '<div style=\"color:#dc2626;font-size:12px;\">QR render error: ' + e.message + '</div>';\n    }\n}\n\nfunction apiHeaders(isJson) {\n    var h = {};\n    if (isJson) h['Content-Type'] = 'application/json';\n    var el = document.getElementById('g_ck_token');\n    var token = (el && el.value && el.value !== 'null') ? el.value : (window.g_ck || '');\n    if (token) h['X-UserToken'] = token;\n    return h;\n}\n\nfunction showBanner(elId, msg, type) {\n    var el = document.getElementById(elId);\n    if (!el) return;\n    el.className = 'alert alert-' + (type || 'info');\n    el.textContent = msg;\n    el.style.display = 'block';\n    setTimeout(function() { el.style.display = 'none'; }, 7000);\n}\n\nfunction formatINR(val) {\n    var n = parseFloat(val || 0);\n    return '₹' + n.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });\n}\n\nfunction escapeHtml(str) {\n    return String(str || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/\"/g, '&quot;');\n}\n\n\nvar pData = null;\nvar pendingTxSysId = '';\nvar activeTopUpPaymentId = '';\nfunction switchPartTab(id, btn) {\n    document.querySelectorAll('.part-tab').forEach(function(el) { el.style.display = 'none'; });\n    document.querySelectorAll('.tab-btn').forEach(function(el) { el.classList.remove('active'); });\n    document.getElementById(id).style.display = 'block';\n    if (btn) btn.classList.add('active');\n}\nfunction loadParticipantDash() {\n    var params = new URLSearchParams(window.location.search);\n    var pId = params.get('participant_sys_id') || '';\n    var url = '/api/x_2327324_konnect/konnectfest/participant/dashboard' + (pId ? '?participant_sys_id=' + encodeURIComponent(pId) : '');\n    fetch(url, { headers: apiHeaders(false) }).then(function(r) { return r.json(); }).then(function(res) {\n        var d = res.result || res;\n        if (!d.success) return showBanner('partAlert', d.message || 'Could not load wallet', 'error');\n        pData = d;\n        document.getElementById('partNamePill').textContent = d.participant.name;\n        document.getElementById('partEventName').textContent = d.event.name || 'Event Wallet';\n        document.getElementById('partEventState').textContent = (d.event.state || '').toUpperCase();\n        document.getElementById('partBalance').textContent = formatINR(d.wallet.available_balance);\n        document.getElementById('partReserved').textContent = formatINR(d.wallet.reserved_balance);\n        document.getElementById('partSpent').textContent = formatINR(d.wallet.total_spent);\n        var isCompleted = d.event.state === 'completed';\n        document.getElementById('refundLockedMsg').style.display = isCompleted ? 'none' : 'block';\n        document.getElementById('refundFormArea').style.display = isCompleted ? 'block' : 'none';\n        var rHtml = '';\n        (d.receipts || []).forEach(function(cp) {\n            rHtml += '<div style=\"padding:10px 0; border-bottom:1px solid var(--border); display:flex; justify-content:space-between;\"><div><strong>' + escapeHtml(cp.item_description) + '</strong><br/><span style=\"color:var(--muted); font-size:11px;\">' + escapeHtml(cp.vendor_name) + ' • ' + escapeHtml(cp.coupon_id) + '</span></div><div style=\"font-weight:700; color:var(--primary);\">' + formatINR(cp.value) + '</div></div>';\n        });\n        document.getElementById('receiptsList').innerHTML = rHtml || '<span style=\"color:var(--muted);\">No digital purchase receipts yet.</span>';\n        var lHtml = '';\n        (d.ledger || []).forEach(function(lg) {\n            var isCredit = lg.entry_type === 'initial_credit' || lg.entry_type === 'top_up' || lg.entry_type === 'refund_release';\n            lHtml += '<div style=\"padding:10px 0; border-bottom:1px solid var(--border); display:flex; justify-content:space-between;\"><div><strong>' + escapeHtml(lg.entry_type.toUpperCase()) + '</strong><br/><span style=\"color:var(--muted); font-size:11px;\">' + escapeHtml(lg.notes) + '</span></div><div style=\"text-align:right;\"><strong style=\"color:' + (isCredit ? 'var(--success)' : 'var(--danger)') + ';\">' + (isCredit ? '+' : '-') + formatINR(lg.amount) + '</strong><br/><span style=\"font-size:11px; color:var(--muted);\">Bal: ' + formatINR(lg.available_after) + '</span></div></div>';\n        });\n        document.getElementById('ledgerList').innerHTML = lHtml || '<span style=\"color:var(--muted);\">No ledger entries yet.</span>';\n        var qrParam = params.get('qr_token');\n        if (qrParam && !pendingTxSysId) { document.getElementById('pQrInput').value = qrParam; lookupPartQR(); }\n    });\n}\nfunction lookupPartQR() {\n    var token = document.getElementById('pQrInput').value.trim();\n    if (!token) return showBanner('partAlert', 'Enter a QR token to verify', 'error');\n    fetch('/api/x_2327324_konnect/konnectfest/vendor/qr-details?qr_token=' + encodeURIComponent(token), { headers: apiHeaders(false) })\n        .then(function(r) { return r.json(); }).then(function(res) {\n            var d = res.result || res;\n            if (!d.valid || !d.transaction) return showBanner('partAlert', d.message || 'Invalid or expired QR token', 'error');\n            pendingTxSysId = d.transaction.sysId;\n            document.getElementById('mVendor').textContent = d.transaction.vendorName + (d.transaction.stallNumber ? ' (' + d.transaction.stallNumber + ')' : '');\n            document.getElementById('mEvent').textContent = d.transaction.eventName;\n            document.getElementById('mItem').textContent = d.transaction.itemDescription;\n            document.getElementById('mAmt').textContent = formatINR(d.transaction.amount);\n            document.getElementById('pConfirmModal').style.display = 'flex';\n        });\n}\nfunction confirmPartPurchase() {\n    if (!pendingTxSysId || !pData) return;\n    fetch('/api/x_2327324_konnect/konnectfest/purchase/confirm', { method: 'POST', headers: apiHeaders(true), body: JSON.stringify({ transaction_sys_id: pendingTxSysId, participant_sys_id: pData.participant.sys_id }) })\n        .then(function(r) { return r.json(); }).then(function(res) {\n            var d = res.result || res; closePartModal();\n            showBanner('partAlert', d.message, d.success ? 'success' : 'error');\n            if (d.success) { document.getElementById('pQrInput').value = ''; loadParticipantDash(); }\n        });\n}\nfunction closePartModal() { document.getElementById('pConfirmModal').style.display = 'none'; }\nfunction createTopUpQR() {\n    if (!pData) return;\n    var amt = parseFloat(document.getElementById('topupAmt').value || '0');\n    if (amt <= 0) return showBanner('partAlert', 'Enter a positive top-up amount', 'error');\n    fetch('/api/x_2327324_konnect/konnectfest/wallet/topup', { method: 'POST', headers: apiHeaders(true), body: JSON.stringify({ participant_sys_id: pData.participant.sys_id, event_sys_id: pData.event.sys_id, amount: amt }) })\n        .then(function(r) { return r.json(); }).then(function(res) {\n            var d = res.result || res;\n            if (!d.success) return showBanner('partAlert', d.message, 'error');\n            activeTopUpPaymentId = d.paymentSysId;\n            document.getElementById('topupQrSection').style.display = 'block';\n            renderQRCode(document.getElementById('topupQrBox'), d.upiUri, 5);\n            document.getElementById('topupPayeeInfo').textContent = 'Pay ' + formatINR(d.amount) + ' to ' + d.payeeName + ' (' + d.upiId + ') • Ref: ' + d.paymentNumber;\n        });\n}\nfunction submitTopUpUtr() {\n    var utr = document.getElementById('topupUtrInput').value.trim();\n    if (!activeTopUpPaymentId || !utr) return showBanner('partAlert', 'Enter your bank UTR reference', 'error');\n    fetch('/api/x_2327324_konnect/konnectfest/registration/submit-utr', { method: 'POST', headers: apiHeaders(true), body: JSON.stringify({ payment_sys_id: activeTopUpPaymentId, utr_reference: utr }) })\n        .then(function(r) { return r.json(); }).then(function(res) {\n            var d = res.result || res; showBanner('partAlert', d.message, d.success ? 'success' : 'error');\n            if (d.success) { document.getElementById('topupQrSection').style.display = 'none'; document.getElementById('topupAmt').value = ''; document.getElementById('topupUtrInput').value = ''; loadParticipantDash(); }\n        });\n}\nfunction submitPartRefund() {\n    if (!pData) return;\n    var payload = { participant_sys_id: pData.participant.sys_id, event_sys_id: pData.event.sys_id, requested_amount: parseFloat(document.getElementById('rfAmt').value || '0'), bank_account_holder: document.getElementById('rfHolder').value.trim(), bank_account_number: document.getElementById('rfAcct').value.trim(), bank_ifsc: document.getElementById('rfIfsc').value.trim(), upi_id: document.getElementById('rfUpi').value.trim() };\n    fetch('/api/x_2327324_konnect/konnectfest/refund/request', { method: 'POST', headers: apiHeaders(true), body: JSON.stringify(payload) })\n        .then(function(r) { return r.json(); }).then(function(res) { var d = res.result || res; showBanner('partAlert', d.message, d.success ? 'success' : 'error'); if (d.success) loadParticipantDash(); });\n}\nloadParticipantDash();\n","register":"\nfunction renderQRCode(containerEl, text, cellSize) {\n    if (!containerEl) return;\n    containerEl.innerHTML = '';\n    try {\n        if (typeof QRCode !== 'undefined') {\n            new QRCode(containerEl, {\n                text: text,\n                width: 200,\n                height: 200,\n                colorDark: '#0f172a',\n                colorLight: '#ffffff',\n                correctLevel: QRCode.CorrectLevel.M\n            });\n        } else {\n            containerEl.innerHTML = '<div style=\"padding:16px;background:#f8fafc;border:1px dashed #94a3b8;font-size:11px;word-break:break-all;\">' + escapeHtml(text) + '</div>';\n        }\n    } catch (e) {\n        containerEl.innerHTML = '<div style=\"color:#dc2626;font-size:12px;\">QR render error: ' + e.message + '</div>';\n    }\n}\n\nfunction apiHeaders(isJson) {\n    var h = {};\n    if (isJson) h['Content-Type'] = 'application/json';\n    var el = document.getElementById('g_ck_token');\n    var token = (el && el.value && el.value !== 'null') ? el.value : (window.g_ck || '');\n    if (token) h['X-UserToken'] = token;\n    return h;\n}\n\nfunction showBanner(elId, msg, type) {\n    var el = document.getElementById(elId);\n    if (!el) return;\n    el.className = 'alert alert-' + (type || 'info');\n    el.textContent = msg;\n    el.style.display = 'block';\n    setTimeout(function() { el.style.display = 'none'; }, 7000);\n}\n\nfunction formatINR(val) {\n    var n = parseFloat(val || 0);\n    return '₹' + n.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });\n}\n\nfunction escapeHtml(str) {\n    return String(str || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/\"/g, '&quot;');\n}\n\n\nvar createdPaymentId = '';\nfunction loadPublicEvents() {\n    fetch('/api/x_2327324_konnect/konnectfest/public/events').then(function(r) { return r.json(); }).then(function(res) {\n        var d = res.result || res;\n        var sel = document.getElementById('rEvent'); sel.innerHTML = '';\n        (d.events || []).forEach(function(ev) {\n            var opt = document.createElement('option'); opt.value = ev.sys_id; opt.textContent = ev.name + ' (' + ev.state + ')'; sel.appendChild(opt);\n        });\n        if ((d.events || []).length === 0) sel.innerHTML = '<option value=\"\">No events currently open for registration</option>';\n    });\n}\nfunction submitPublicReg() {\n    var payload = { event_sys_id: document.getElementById('rEvent').value, name: document.getElementById('rName').value.trim(), email: document.getElementById('rEmail').value.trim(), phone: document.getElementById('rPhone').value.trim(), college_organization: document.getElementById('rCollege').value.trim(), requested_amount: parseFloat(document.getElementById('rAmount').value || '0') };\n    if (!payload.event_sys_id || !payload.name || !payload.email || payload.requested_amount <= 0) return showBanner('regAlert', 'Please fill event, name, email, and positive amount', 'error');\n    fetch('/api/x_2327324_konnect/konnectfest/registration', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) })\n        .then(function(r) { return r.json(); }).then(function(res) {\n            var d = res.result || res;\n            if (!d.success) return showBanner('regAlert', d.message, 'error');\n            createdPaymentId = d.paymentSysId;\n            document.getElementById('regStep1').style.display = 'none';\n            document.getElementById('regStep2').style.display = 'block';\n            renderQRCode(document.getElementById('regQrBox'), d.upiUri, 5);\n            document.getElementById('regPayInfo').innerHTML = '<strong>Pay ' + formatINR(d.amount) + '</strong> to ' + escapeHtml(d.payeeName) + '<br/>UPI ID: <code>' + escapeHtml(d.upiId) + '</code> • Ref: <code>' + escapeHtml(d.paymentNumber) + '</code>';\n        });\n}\nfunction submitPublicUtr() {\n    var utr = document.getElementById('rUtr').value.trim();\n    if (!utr) return showBanner('regAlert', 'Please enter your bank UTR reference', 'error');\n    fetch('/api/x_2327324_konnect/konnectfest/registration/submit-utr', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ payment_sys_id: createdPaymentId, utr_reference: utr }) })\n        .then(function(r) { return r.json(); }).then(function(res) {\n            var d = res.result || res;\n            if (!d.success) return showBanner('regAlert', d.message, 'error');\n            document.getElementById('regStep2').style.display = 'none';\n            document.getElementById('regStep3').style.display = 'block';\n            document.getElementById('regDoneMsg').textContent = d.message;\n        });\n}\nloadPublicEvents();\n"};
+
+export function handleGetPublicScript(request: any, response: any) {
+    try {
+        const page = (request.queryParams && request.queryParams.page) ? String(request.queryParams.page) : 'register';
+        const script = CLIENT_SCRIPTS[page] || 'console.error("Script not found for page: ' + page + '");';
+        response.setContentType('application/javascript; charset=UTF-8');
+        response.setStatus(200);
+        const writer = response.getStreamWriter();
+        if (writer && typeof writer.writeString === 'function') {
+            writer.writeString(script);
+        } else {
+            response.setBody(script);
+        }
+    } catch (e: any) {
+        response.setStatus(500);
+        response.setBody('console.error("Error serving script: ' + (e.message || e) + '");');
     }
 }

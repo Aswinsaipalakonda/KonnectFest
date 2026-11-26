@@ -1,6 +1,7 @@
 import { RestApi } from '@servicenow/sdk/core'
 import {
     handleGetPublicEvents,
+    handleGetPublicScript,
     handleParticipantRegistration,
     handleSubmitRegistrationUtr,
     handleOrganizerOverview,
@@ -29,6 +30,18 @@ export const konnectfestApi = RestApi({
     active: true,
     routes: [
         // PUBLIC ROUTES (No login required for registration)
+        {
+            $id: Now.ID['route_public_script'],
+            name: 'GetPublicScript',
+            method: 'GET',
+            path: '/public/script',
+            active: true,
+            authentication: false,
+            authorization: false,
+            script: handleGetPublicScript,
+            shortDescription: 'Serve UI client scripts without Jelly escaping issues',
+        },
+
         {
             $id: Now.ID['route_public_events'],
             name: 'GetPublicEvents',

@@ -259,6 +259,10 @@ declare global {
                         table: 'sys_ws_operation'
                         id: '0b1d3a1225eb4fbf898cf6e952ed2534'
                     }
+                    route_public_script: {
+                        table: 'sys_ws_operation'
+                        id: '16b973a89ae64a0ebf7e30f83dcb65c5'
+                    }
                     route_register: {
                         table: 'sys_ws_operation'
                         id: '1f02b6dfca2a4842b51c0c3a3572d880'
