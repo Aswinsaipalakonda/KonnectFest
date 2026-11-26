@@ -1,0 +1,6 @@
+{
+    "scope": "x_495021_konnect",
+    "scopeId": "afa421ead9c944a9af755851526fa950",
+    "name": "KonnectFest",
+    "tsconfigPath": "./src/server/tsconfig.json"
+}
