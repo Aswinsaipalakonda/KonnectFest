@@ -22,7 +22,7 @@ export class KonnectFestPaymentService {
         verifiedAmount: number,
         financerUserSysId: string
     ): PaymentVerificationResult {
-        const paymentGr = new GlideRecord('x_495021_konnect_payment')
+        const paymentGr = new GlideRecord('x_2327324_konnect_payment')
         if (!paymentGr.get(paymentSysId)) {
             return { success: false, message: 'Payment record not found.' }
         }
@@ -42,7 +42,7 @@ export class KonnectFestPaymentService {
         }
 
         // Verify UTR is not already used in another verified payment
-        const checkUtr = new GlideRecord('x_495021_konnect_payment')
+        const checkUtr = new GlideRecord('x_2327324_konnect_payment')
         checkUtr.addQuery('utr_reference', utr)
         checkUtr.addQuery('status', 'verified')
         checkUtr.addQuery('sys_id', '!=', paymentSysId)
@@ -91,7 +91,7 @@ export class KonnectFestPaymentService {
         reason: string,
         financerUserSysId: string
     ): PaymentVerificationResult {
-        const paymentGr = new GlideRecord('x_495021_konnect_payment')
+        const paymentGr = new GlideRecord('x_2327324_konnect_payment')
         if (!paymentGr.get(paymentSysId)) {
             return { success: false, message: 'Payment record not found.' }
         }
@@ -119,7 +119,7 @@ export class KonnectFestPaymentService {
      * and assigns the participant role.
      */
     static provisionParticipantAccount(participantSysId: string): string | null {
-        const partGr = new GlideRecord('x_495021_konnect_participant')
+        const partGr = new GlideRecord('x_2327324_konnect_participant')
         if (!partGr.get(participantSysId)) return null
 
         const email = partGr.getValue('email')
@@ -148,9 +148,9 @@ export class KonnectFestPaymentService {
         partGr.setValue('verification_date', new GlideDateTime().getValue())
         partGr.update()
 
-        // Assign x_495021_konnect.participant role
+        // Assign x_2327324_konnect.participant role
         const roleGr = new GlideRecord('sys_user_role')
-        roleGr.addQuery('name', 'x_495021_konnect.participant')
+        roleGr.addQuery('name', 'x_2327324_konnect.participant')
         roleGr.query()
         if (roleGr.next()) {
             const roleSysId = roleGr.getUniqueValue()

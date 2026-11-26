@@ -20,7 +20,7 @@ export class KonnectFestWalletService {
      * Retrieves or creates a wallet for a participant and event.
      */
     static getOrCreateWallet(participantSysId: string, eventSysId: string): { sysId: string; availableBalance: number; reservedBalance: number; status: string } | null {
-        const gr = new GlideRecord('x_495021_konnect_wallet')
+        const gr = new GlideRecord('x_2327324_konnect_wallet')
         gr.addQuery('participant', participantSysId)
         gr.addQuery('event', eventSysId)
         gr.query()
@@ -40,7 +40,7 @@ export class KonnectFestWalletService {
      * Idempotent: guaranteed to execute once per payment record.
      */
     static initializeWalletFromPayment(paymentSysId: string): WalletOperationResult {
-        const paymentGr = new GlideRecord('x_495021_konnect_payment')
+        const paymentGr = new GlideRecord('x_2327324_konnect_payment')
         if (!paymentGr.get(paymentSysId)) {
             return { success: false, message: 'Payment record not found.' }
         }
@@ -66,7 +66,7 @@ export class KonnectFestWalletService {
         const idempotencyKey = `INIT_${paymentSysId}_${participantSysId}`
 
         // Check if ledger record with this idempotency key already exists
-        const checkLedger = new GlideRecord('x_495021_konnect_wallet_ledger')
+        const checkLedger = new GlideRecord('x_2327324_konnect_wallet_ledger')
         checkLedger.addQuery('idempotency_key', idempotencyKey)
         checkLedger.query()
         if (checkLedger.next()) {
@@ -80,7 +80,7 @@ export class KonnectFestWalletService {
         let currentAvailable = 0
         let currentReserved = 0
 
-        const walletGr = new GlideRecord('x_495021_konnect_wallet')
+        const walletGr = new GlideRecord('x_2327324_konnect_wallet')
         walletGr.addQuery('participant', participantSysId)
         walletGr.addQuery('event', eventSysId)
         walletGr.query()
@@ -105,7 +105,7 @@ export class KonnectFestWalletService {
         const newAvailable = currentAvailable + amount
 
         // Create Ledger Record
-        const ledgerGr = new GlideRecord('x_495021_konnect_wallet_ledger')
+        const ledgerGr = new GlideRecord('x_2327324_konnect_wallet_ledger')
         ledgerGr.initialize()
         ledgerGr.setValue('wallet', walletSysId)
         ledgerGr.setValue('participant', participantSysId)
@@ -133,7 +133,7 @@ export class KonnectFestWalletService {
         paymentGr.update()
 
         // Activate participant if needed
-        const partGr = new GlideRecord('x_495021_konnect_participant')
+        const partGr = new GlideRecord('x_2327324_konnect_participant')
         if (partGr.get(participantSysId)) {
             partGr.setValue('status', 'active')
             partGr.update()
@@ -154,7 +154,7 @@ export class KonnectFestWalletService {
      * Credits a verified top-up payment to the participant wallet.
      */
     static creditTopUpPayment(paymentSysId: string): WalletOperationResult {
-        const paymentGr = new GlideRecord('x_495021_konnect_payment')
+        const paymentGr = new GlideRecord('x_2327324_konnect_payment')
         if (!paymentGr.get(paymentSysId)) {
             return { success: false, message: 'Payment record not found.' }
         }
@@ -177,7 +177,7 @@ export class KonnectFestWalletService {
 
         const idempotencyKey = `TOPUP_${paymentSysId}_${new GlideDateTime().getNumericValue()}`
 
-        const walletGr = new GlideRecord('x_495021_konnect_wallet')
+        const walletGr = new GlideRecord('x_2327324_konnect_wallet')
         walletGr.addQuery('participant', participantSysId)
         walletGr.addQuery('event', eventSysId)
         walletGr.query()
@@ -192,7 +192,7 @@ export class KonnectFestWalletService {
         const newAvailable = currentAvailable + amount
 
         // Ledger Entry
-        const ledgerGr = new GlideRecord('x_495021_konnect_wallet_ledger')
+        const ledgerGr = new GlideRecord('x_2327324_konnect_wallet_ledger')
         ledgerGr.initialize()
         ledgerGr.setValue('wallet', walletSysId)
         ledgerGr.setValue('participant', participantSysId)
@@ -238,7 +238,7 @@ export class KonnectFestWalletService {
      * 6. Generates digital coupon / purchase receipt
      */
     static confirmPurchaseTransaction(transactionSysId: string, participantSysId: string): WalletOperationResult {
-        const txGr = new GlideRecord('x_495021_konnect_purchase_tx')
+        const txGr = new GlideRecord('x_2327324_konnect_purchase_tx')
         if (!txGr.get(transactionSysId)) {
             return { success: false, message: 'Transaction record not found.' }
         }
@@ -270,7 +270,7 @@ export class KonnectFestWalletService {
         const itemDesc = txGr.getValue('item_description') || 'Festival Purchase'
 
         // Check Event state
-        const eventGr = new GlideRecord('x_495021_konnect_event')
+        const eventGr = new GlideRecord('x_2327324_konnect_event')
         if (eventGr.get(eventSysId)) {
             const evState = eventGr.getValue('state')
             if (evState === 'completed' || evState === 'closed') {
@@ -282,7 +282,7 @@ export class KonnectFestWalletService {
         }
 
         // Query Participant Wallet
-        const walletGr = new GlideRecord('x_495021_konnect_wallet')
+        const walletGr = new GlideRecord('x_2327324_konnect_wallet')
         walletGr.addQuery('participant', participantSysId)
         walletGr.addQuery('event', eventSysId)
         walletGr.query()
@@ -322,7 +322,7 @@ export class KonnectFestWalletService {
         const idempotencyKey = `PURCHASE_${transactionSysId}_${participantSysId}`
 
         // Check for duplicate processing
-        const checkLedger = new GlideRecord('x_495021_konnect_wallet_ledger')
+        const checkLedger = new GlideRecord('x_2327324_konnect_wallet_ledger')
         checkLedger.addQuery('idempotency_key', idempotencyKey)
         checkLedger.query()
         if (checkLedger.next()) {
@@ -330,7 +330,7 @@ export class KonnectFestWalletService {
         }
 
         // 1. Create Wallet Ledger Debit Record
-        const ledgerGr = new GlideRecord('x_495021_konnect_wallet_ledger')
+        const ledgerGr = new GlideRecord('x_2327324_konnect_wallet_ledger')
         ledgerGr.initialize()
         ledgerGr.setValue('wallet', walletGr.getUniqueValue())
         ledgerGr.setValue('participant', participantSysId)
@@ -354,7 +354,7 @@ export class KonnectFestWalletService {
         walletGr.update()
 
         // 3. Create Vendor Ledger Credit
-        const vendorLedgerGr = new GlideRecord('x_495021_konnect_vendor_ledger')
+        const vendorLedgerGr = new GlideRecord('x_2327324_konnect_vendor_ledger')
         vendorLedgerGr.initialize()
         vendorLedgerGr.setValue('vendor', vendorSysId)
         vendorLedgerGr.setValue('event', eventSysId)
@@ -371,7 +371,7 @@ export class KonnectFestWalletService {
         txGr.update()
 
         // 5. Create Digital Coupon / Purchase Receipt
-        const couponGr = new GlideRecord('x_495021_konnect_digital_coupon')
+        const couponGr = new GlideRecord('x_2327324_konnect_digital_coupon')
         couponGr.initialize()
         couponGr.setValue('coupon_id', `RCPT-${new GlideDateTime().getNumericValue()}`)
         couponGr.setValue('purchase_transaction', transactionSysId)
@@ -407,7 +407,7 @@ export class KonnectFestWalletService {
         bankDetails: { accountHolder: string; accountNumber: string; ifsc: string; upiId?: string }
     ): WalletOperationResult {
         // Validate Event is completed
-        const eventGr = new GlideRecord('x_495021_konnect_event')
+        const eventGr = new GlideRecord('x_2327324_konnect_event')
         if (!eventGr.get(eventSysId)) {
             return { success: false, message: 'Event not found.' }
         }
@@ -420,7 +420,7 @@ export class KonnectFestWalletService {
         }
 
         // Check for existing pending refund
-        const pendingRef = new GlideRecord('x_495021_konnect_refund_request')
+        const pendingRef = new GlideRecord('x_2327324_konnect_refund_request')
         pendingRef.addQuery('participant', participantSysId)
         pendingRef.addQuery('event', eventSysId)
         pendingRef.addQuery('status', 'IN', 'submitted,under_review,approved_for_payout')
@@ -429,7 +429,7 @@ export class KonnectFestWalletService {
             return { success: false, message: 'An active refund request already exists for this event.' }
         }
 
-        const walletGr = new GlideRecord('x_495021_konnect_wallet')
+        const walletGr = new GlideRecord('x_2327324_konnect_wallet')
         walletGr.addQuery('participant', participantSysId)
         walletGr.addQuery('event', eventSysId)
         walletGr.query()
@@ -453,7 +453,7 @@ export class KonnectFestWalletService {
         const newReserved = reserved + requestedAmount
 
         // 1. Create Refund Request
-        const refGr = new GlideRecord('x_495021_konnect_refund_request')
+        const refGr = new GlideRecord('x_2327324_konnect_refund_request')
         refGr.initialize()
         refGr.setValue('participant', participantSysId)
         refGr.setValue('wallet', walletGr.getUniqueValue())
@@ -468,7 +468,7 @@ export class KonnectFestWalletService {
         const refSysId = refGr.insert()
 
         // 2. Create Ledger Hold Entry
-        const ledgerGr = new GlideRecord('x_495021_konnect_wallet_ledger')
+        const ledgerGr = new GlideRecord('x_2327324_konnect_wallet_ledger')
         ledgerGr.initialize()
         ledgerGr.setValue('wallet', walletGr.getUniqueValue())
         ledgerGr.setValue('participant', participantSysId)
@@ -502,7 +502,7 @@ export class KonnectFestWalletService {
      * Financer records actual bank payout for refund, releasing reserved hold.
      */
     static finalizeRefundPayout(refundSysId: string, payoutRef: string, financerUserSysId: string): WalletOperationResult {
-        const refGr = new GlideRecord('x_495021_konnect_refund_request')
+        const refGr = new GlideRecord('x_2327324_konnect_refund_request')
         if (!refGr.get(refundSysId)) {
             return { success: false, message: 'Refund request not found.' }
         }
@@ -517,7 +517,7 @@ export class KonnectFestWalletService {
         const participantSysId = refGr.getValue('participant')
         const eventSysId = refGr.getValue('event')
 
-        const walletGr = new GlideRecord('x_495021_konnect_wallet')
+        const walletGr = new GlideRecord('x_2327324_konnect_wallet')
         if (!walletGr.get(walletSysId)) {
             return { success: false, message: 'Wallet not found.' }
         }
@@ -528,7 +528,7 @@ export class KonnectFestWalletService {
         const totalRefunded = parseFloat(walletGr.getValue('total_refunded') || '0') + amount
 
         // Ledger Entry for Payout
-        const ledgerGr = new GlideRecord('x_495021_konnect_wallet_ledger')
+        const ledgerGr = new GlideRecord('x_2327324_konnect_wallet_ledger')
         ledgerGr.initialize()
         ledgerGr.setValue('wallet', walletSysId)
         ledgerGr.setValue('participant', participantSysId)
@@ -568,7 +568,7 @@ export class KonnectFestWalletService {
      * Financer rejects refund request, returning reserved amount back to available balance.
      */
     static rejectRefund(refundSysId: string, reason: string, financerUserSysId: string): WalletOperationResult {
-        const refGr = new GlideRecord('x_495021_konnect_refund_request')
+        const refGr = new GlideRecord('x_2327324_konnect_refund_request')
         if (!refGr.get(refundSysId)) {
             return { success: false, message: 'Refund request not found.' }
         }
@@ -582,7 +582,7 @@ export class KonnectFestWalletService {
         const participantSysId = refGr.getValue('participant')
         const eventSysId = refGr.getValue('event')
 
-        const walletGr = new GlideRecord('x_495021_konnect_wallet')
+        const walletGr = new GlideRecord('x_2327324_konnect_wallet')
         if (walletGr.get(walletSysId)) {
             const currentAvailable = parseFloat(walletGr.getValue('available_balance') || '0')
             const currentReserved = parseFloat(walletGr.getValue('reserved_balance') || '0')
@@ -590,7 +590,7 @@ export class KonnectFestWalletService {
             const newReserved = Math.max(0, currentReserved - amount)
 
             // Ledger Hold Release Entry
-            const ledgerGr = new GlideRecord('x_495021_konnect_wallet_ledger')
+            const ledgerGr = new GlideRecord('x_2327324_konnect_wallet_ledger')
             ledgerGr.initialize()
             ledgerGr.setValue('wallet', walletSysId)
             ledgerGr.setValue('participant', participantSysId)

@@ -11,7 +11,7 @@ import {
 export const brWalletLedgerImmutable = BusinessRule({
     $id: Now.ID['br_wallet_ledger_immutable'],
     name: 'KonnectFest_WalletLedger_Immutable',
-    table: 'x_495021_konnect_wallet_ledger',
+    table: 'x_2327324_konnect_wallet_ledger',
     when: 'before',
     action: ['update', 'delete'],
     script: preventLedgerModification,
@@ -26,7 +26,7 @@ export const brWalletLedgerImmutable = BusinessRule({
 export const brVendorLedgerImmutable = BusinessRule({
     $id: Now.ID['br_vendor_ledger_immutable'],
     name: 'KonnectFest_VendorLedger_Immutable',
-    table: 'x_495021_konnect_vendor_ledger',
+    table: 'x_2327324_konnect_vendor_ledger',
     when: 'before',
     action: ['delete'],
     script: preventLedgerModification,
@@ -41,7 +41,7 @@ export const brVendorLedgerImmutable = BusinessRule({
 export const brWalletBalanceGuard = BusinessRule({
     $id: Now.ID['br_wallet_balance_guard'],
     name: 'KonnectFest_Wallet_BalanceIntegrity',
-    table: 'x_495021_konnect_wallet',
+    table: 'x_2327324_konnect_wallet',
     when: 'before',
     action: ['insert', 'update'],
     script: guardWalletBalance,
@@ -56,7 +56,7 @@ export const brWalletBalanceGuard = BusinessRule({
 export const brPaymentVerifiedTrigger = BusinessRule({
     $id: Now.ID['br_payment_verified_trigger'],
     name: 'KonnectFest_Payment_AutoCreditOnVerify',
-    table: 'x_495021_konnect_payment',
+    table: 'x_2327324_konnect_payment',
     when: 'after',
     action: ['update'],
     script: onPaymentStatusVerified,

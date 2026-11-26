@@ -29,7 +29,7 @@ export class KonnectFestQRService {
         }
 
         // Validate vendor and event
-        const vendorGr = new GlideRecord('x_495021_konnect_vendor')
+        const vendorGr = new GlideRecord('x_2327324_konnect_vendor')
         if (!vendorGr.get(vendorSysId)) {
             return { success: false, message: 'Vendor record not found.' }
         }
@@ -38,7 +38,7 @@ export class KonnectFestQRService {
             return { success: false, message: 'Vendor is not active.' }
         }
 
-        const eventGr = new GlideRecord('x_495021_konnect_event')
+        const eventGr = new GlideRecord('x_2327324_konnect_event')
         if (!eventGr.get(eventSysId)) {
             return { success: false, message: 'Event not found.' }
         }
@@ -56,7 +56,7 @@ export class KonnectFestQRService {
         const expGdt = new GlideDateTime()
         expGdt.addSeconds(expirySeconds)
 
-        const txGr = new GlideRecord('x_495021_konnect_purchase_tx')
+        const txGr = new GlideRecord('x_2327324_konnect_purchase_tx')
         txGr.initialize()
         txGr.setValue('transaction_id', `TXN-${new GlideDateTime().getNumericValue()}`)
         txGr.setValue('event', eventSysId)
@@ -97,7 +97,7 @@ export class KonnectFestQRService {
             isExpired: boolean
         }
     } {
-        const txGr = new GlideRecord('x_495021_konnect_purchase_tx')
+        const txGr = new GlideRecord('x_2327324_konnect_purchase_tx')
         txGr.addQuery('qr_token', qrToken)
         txGr.query()
 
@@ -126,14 +126,14 @@ export class KonnectFestQRService {
 
         let vendorName = 'Vendor'
         let stallNumber = ''
-        const vendorGr = new GlideRecord('x_495021_konnect_vendor')
+        const vendorGr = new GlideRecord('x_2327324_konnect_vendor')
         if (vendorGr.get(txGr.getValue('vendor'))) {
             vendorName = vendorGr.getValue('name') || 'Vendor'
             stallNumber = vendorGr.getValue('stall_number') || ''
         }
 
         let eventName = 'Event'
-        const eventGr = new GlideRecord('x_495021_konnect_event')
+        const eventGr = new GlideRecord('x_2327324_konnect_event')
         if (eventGr.get(txGr.getValue('event'))) {
             eventName = eventGr.getValue('name') || 'Event'
         }

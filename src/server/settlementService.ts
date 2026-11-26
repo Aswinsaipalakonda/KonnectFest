@@ -22,7 +22,7 @@ export class KonnectFestSettlementService {
         vendorSysId: string,
         reviewedByUserSysId: string
     ): SettlementBatchResult {
-        const vLedgerGr = new GlideRecord('x_495021_konnect_vendor_ledger')
+        const vLedgerGr = new GlideRecord('x_2327324_konnect_vendor_ledger')
         vLedgerGr.addQuery('event', eventSysId)
         vLedgerGr.addQuery('vendor', vendorSysId)
         vLedgerGr.addQuery('status', 'unsettled')
@@ -45,7 +45,7 @@ export class KonnectFestSettlementService {
 
         const batchId = `SET-${new GlideDateTime().getNumericValue()}`
 
-        const setGr = new GlideRecord('x_495021_konnect_settlement')
+        const setGr = new GlideRecord('x_2327324_konnect_settlement')
         setGr.initialize()
         setGr.setValue('batch_id', batchId)
         setGr.setValue('event', eventSysId)
@@ -60,7 +60,7 @@ export class KonnectFestSettlementService {
 
         // Update vendor ledger entries to in_settlement_batch
         for (const id of ledgerSysIds) {
-            const updGr = new GlideRecord('x_495021_konnect_vendor_ledger')
+            const updGr = new GlideRecord('x_2327324_konnect_vendor_ledger')
             if (updGr.get(id)) {
                 updGr.setValue('status', 'in_settlement_batch')
                 updGr.setValue('settlement_batch', setSysId)
@@ -86,7 +86,7 @@ export class KonnectFestSettlementService {
         payoutRef: string,
         financerUserSysId: string
     ): SettlementBatchResult {
-        const setGr = new GlideRecord('x_495021_konnect_settlement')
+        const setGr = new GlideRecord('x_2327324_konnect_settlement')
         if (!setGr.get(settlementSysId)) {
             return { success: false, message: 'Settlement record not found.' }
         }
@@ -98,7 +98,7 @@ export class KonnectFestSettlementService {
         setGr.update()
 
         // Mark all associated vendor ledger items as settled
-        const vLedgerGr = new GlideRecord('x_495021_konnect_vendor_ledger')
+        const vLedgerGr = new GlideRecord('x_2327324_konnect_vendor_ledger')
         vLedgerGr.addQuery('settlement_batch', settlementSysId)
         vLedgerGr.query()
         while (vLedgerGr.next()) {

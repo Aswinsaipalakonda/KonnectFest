@@ -2,7 +2,7 @@
 
 ## 1. System Overview
 
-KonnectFest operates as a native ServiceNow scoped application (`x_495021_konnect`). The application architecture separates responsibilities into four distinct layers:
+KonnectFest operates as a native ServiceNow scoped application (`x_2327324_konnect`). The application architecture separates responsibilities into four distinct layers:
 
 1. **Data Model Layer (ServiceNow Tables & Dictionaries)**
    - Normalized relational tables with explicit foreign keys.
@@ -17,15 +17,15 @@ KonnectFest operates as a native ServiceNow scoped application (`x_495021_konnec
    - `KonnectFestSettlementService`: Vendor sales ledger batching and settlement reporting.
 
 3. **API Layer (Scripted REST APIs)**
-   - Scoped REST API namespace: `/api/x_495021_konnect/v1/`
+   - Scoped REST API namespace: `/api/x_2327324_konnect/v1/`
    - Uniform JSON response formats (`status`, `data`, `error`, `timestamp`).
    - ACL-enforced endpoints requiring valid session or API credentials.
 
 4. **Experience Layer (UI Pages & Workspaces)**
-   - Participant Mobile Portal (`x_495021_konnect_participant_portal.do`)
-   - Vendor QR Workspace (`x_495021_konnect_vendor_workspace.do`)
-   - Finance Settlement Workspace (`x_495021_konnect_financer_workspace.do`)
-   - Organizer Control Dashboard (`x_495021_konnect_organizer_dashboard.do`)
+   - Participant Mobile Portal (`x_2327324_konnect_participant_portal.do`)
+   - Vendor QR Workspace (`x_2327324_konnect_vendor_workspace.do`)
+   - Finance Settlement Workspace (`x_2327324_konnect_financer_workspace.do`)
+   - Organizer Control Dashboard (`x_2327324_konnect_organizer_dashboard.do`)
 
 ---
 

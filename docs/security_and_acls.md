@@ -4,10 +4,10 @@
 
 | Role Name | Scope Identifier | Description |
 |-----------|------------------|-------------|
-| Organizer / Admin | `x_495021_konnect.organizer_admin` | Full management of events, vendors, participants, reports, and event completion |
-| Financer | `x_495021_konnect.financer` | Verification of bank payments (UTR), top-ups, refund approvals, and vendor settlements |
-| Vendor | `x_495021_konnect.vendor` | Stall operation, purchase QR generation, and viewing own sales |
-| Participant | `x_495021_konnect.participant` | Mobile wallet viewing, top-up requests, QR scan-to-confirm, and post-event refund claims |
+| Organizer / Admin | `x_2327324_konnect.organizer_admin` | Full management of events, vendors, participants, reports, and event completion |
+| Financer | `x_2327324_konnect.financer` | Verification of bank payments (UTR), top-ups, refund approvals, and vendor settlements |
+| Vendor | `x_2327324_konnect.vendor` | Stall operation, purchase QR generation, and viewing own sales |
+| Participant | `x_2327324_konnect.participant` | Mobile wallet viewing, top-up requests, QR scan-to-confirm, and post-event refund claims |
 
 ---
 

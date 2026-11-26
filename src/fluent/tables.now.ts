@@ -11,8 +11,8 @@ import {
  * 1. EVENT TABLE
  * Central event configuration holding details, UPI payee information, and status.
  */
-export const x_495021_konnect_event = Table({
-    name: 'x_495021_konnect_event',
+export const x_2327324_konnect_event = Table({
+    name: 'x_2327324_konnect_event',
     label: 'KonnectFest Event',
     display: 'name',
     autoNumber: {
@@ -51,8 +51,8 @@ export const x_495021_konnect_event = Table({
  * 2. PARTICIPANT TABLE
  * Registered festival attendee with personal/org details and link to ServiceNow sys_user.
  */
-export const x_495021_konnect_participant = Table({
-    name: 'x_495021_konnect_participant',
+export const x_2327324_konnect_participant = Table({
+    name: 'x_2327324_konnect_participant',
     label: 'KonnectFest Participant',
     display: 'name',
     autoNumber: {
@@ -69,7 +69,7 @@ export const x_495021_konnect_participant = Table({
         participant_id_code: StringColumn({ label: 'Participant ID / Student Code', maxLength: 50 }),
         event: ReferenceColumn({
             label: 'Event',
-            referenceTable: 'x_495021_konnect_event',
+            referenceTable: 'x_2327324_konnect_event',
             mandatory: true,
         }),
         sys_user: ReferenceColumn({
@@ -96,8 +96,8 @@ export const x_495021_konnect_participant = Table({
  * 3. PARTICIPANT REGISTRATION TABLE
  * Initial event registration application record.
  */
-export const x_495021_konnect_registration = Table({
-    name: 'x_495021_konnect_registration',
+export const x_2327324_konnect_registration = Table({
+    name: 'x_2327324_konnect_registration',
     label: 'KonnectFest Registration',
     display: 'number',
     autoNumber: {
@@ -109,12 +109,12 @@ export const x_495021_konnect_registration = Table({
         number: StringColumn({ label: 'Number', maxLength: 40, readOnly: true }),
         participant: ReferenceColumn({
             label: 'Participant',
-            referenceTable: 'x_495021_konnect_participant',
+            referenceTable: 'x_2327324_konnect_participant',
             mandatory: true,
         }),
         event: ReferenceColumn({
             label: 'Event',
-            referenceTable: 'x_495021_konnect_event',
+            referenceTable: 'x_2327324_konnect_event',
             mandatory: true,
         }),
         requested_initial_amount: DecimalColumn({ label: 'Requested Initial Wallet Amount', scale: 2 }),
@@ -138,8 +138,8 @@ export const x_495021_konnect_registration = Table({
  * 4. VENDOR TABLE
  * Authorized stall merchant participating in the festival.
  */
-export const x_495021_konnect_vendor = Table({
-    name: 'x_495021_konnect_vendor',
+export const x_2327324_konnect_vendor = Table({
+    name: 'x_2327324_konnect_vendor',
     label: 'KonnectFest Vendor',
     display: 'name',
     autoNumber: {
@@ -165,7 +165,7 @@ export const x_495021_konnect_vendor = Table({
         }),
         event: ReferenceColumn({
             label: 'Event',
-            referenceTable: 'x_495021_konnect_event',
+            referenceTable: 'x_2327324_konnect_event',
             mandatory: true,
         }),
         assigned_user: ReferenceColumn({
@@ -192,8 +192,8 @@ export const x_495021_konnect_vendor = Table({
  * 5. VENDOR STALL TABLE
  * Physical stall location linked to a vendor and event.
  */
-export const x_495021_konnect_vendor_stall = Table({
-    name: 'x_495021_konnect_vendor_stall',
+export const x_2327324_konnect_vendor_stall = Table({
+    name: 'x_2327324_konnect_vendor_stall',
     label: 'KonnectFest Vendor Stall',
     display: 'stall_code',
     schema: {
@@ -201,11 +201,11 @@ export const x_495021_konnect_vendor_stall = Table({
         stall_name: StringColumn({ label: 'Stall Name / Location', maxLength: 100 }),
         vendor: ReferenceColumn({
             label: 'Vendor',
-            referenceTable: 'x_495021_konnect_vendor',
+            referenceTable: 'x_2327324_konnect_vendor',
         }),
         event: ReferenceColumn({
             label: 'Event',
-            referenceTable: 'x_495021_konnect_event',
+            referenceTable: 'x_2327324_konnect_event',
             mandatory: true,
         }),
         location_notes: StringColumn({ label: 'Location Notes', maxLength: 255 }),
@@ -216,8 +216,8 @@ export const x_495021_konnect_vendor_stall = Table({
  * 6. PAYMENT TABLE
  * Records external UPI bank payments submitted for registration or top-up.
  */
-export const x_495021_konnect_payment = Table({
-    name: 'x_495021_konnect_payment',
+export const x_2327324_konnect_payment = Table({
+    name: 'x_2327324_konnect_payment',
     label: 'KonnectFest Payment',
     display: 'number',
     autoNumber: {
@@ -238,12 +238,12 @@ export const x_495021_konnect_payment = Table({
         }),
         participant: ReferenceColumn({
             label: 'Participant',
-            referenceTable: 'x_495021_konnect_participant',
+            referenceTable: 'x_2327324_konnect_participant',
             mandatory: true,
         }),
         event: ReferenceColumn({
             label: 'Event',
-            referenceTable: 'x_495021_konnect_event',
+            referenceTable: 'x_2327324_konnect_event',
             mandatory: true,
         }),
         requested_amount: DecimalColumn({ label: 'Requested Amount (INR)', scale: 2, mandatory: true }),
@@ -287,8 +287,8 @@ export const x_495021_konnect_payment = Table({
  * 7. WALLET TABLE
  * Digital balance for a participant within an event.
  */
-export const x_495021_konnect_wallet = Table({
-    name: 'x_495021_konnect_wallet',
+export const x_2327324_konnect_wallet = Table({
+    name: 'x_2327324_konnect_wallet',
     label: 'KonnectFest Wallet',
     display: 'number',
     autoNumber: {
@@ -300,12 +300,12 @@ export const x_495021_konnect_wallet = Table({
         number: StringColumn({ label: 'Number', maxLength: 40, readOnly: true }),
         participant: ReferenceColumn({
             label: 'Participant',
-            referenceTable: 'x_495021_konnect_participant',
+            referenceTable: 'x_2327324_konnect_participant',
             mandatory: true,
         }),
         event: ReferenceColumn({
             label: 'Event',
-            referenceTable: 'x_495021_konnect_event',
+            referenceTable: 'x_2327324_konnect_event',
             mandatory: true,
         }),
         initial_amount: DecimalColumn({ label: 'Initial Amount (INR)', scale: 2 }),
@@ -331,8 +331,8 @@ export const x_495021_konnect_wallet = Table({
  * 8. WALLET LEDGER TABLE
  * Immutable double-entry financial log for all wallet balance mutations.
  */
-export const x_495021_konnect_wallet_ledger = Table({
-    name: 'x_495021_konnect_wallet_ledger',
+export const x_2327324_konnect_wallet_ledger = Table({
+    name: 'x_2327324_konnect_wallet_ledger',
     label: 'KonnectFest Wallet Ledger',
     display: 'number',
     autoNumber: {
@@ -344,17 +344,17 @@ export const x_495021_konnect_wallet_ledger = Table({
         number: StringColumn({ label: 'Number', maxLength: 40, readOnly: true }),
         wallet: ReferenceColumn({
             label: 'Wallet',
-            referenceTable: 'x_495021_konnect_wallet',
+            referenceTable: 'x_2327324_konnect_wallet',
             mandatory: true,
         }),
         participant: ReferenceColumn({
             label: 'Participant',
-            referenceTable: 'x_495021_konnect_participant',
+            referenceTable: 'x_2327324_konnect_participant',
             mandatory: true,
         }),
         event: ReferenceColumn({
             label: 'Event',
-            referenceTable: 'x_495021_konnect_event',
+            referenceTable: 'x_2327324_konnect_event',
             mandatory: true,
         }),
         entry_type: StringColumn({
@@ -378,7 +378,7 @@ export const x_495021_konnect_wallet_ledger = Table({
         reserved_balance_after: DecimalColumn({ label: 'Reserved Balance After', scale: 2 }),
         source_payment: ReferenceColumn({
             label: 'Source Payment',
-            referenceTable: 'x_495021_konnect_payment',
+            referenceTable: 'x_2327324_konnect_payment',
         }),
         source_transaction: StringColumn({ label: 'Source Transaction SysID', maxLength: 40 }),
         idempotency_key: StringColumn({ label: 'Idempotency Key', maxLength: 100, mandatory: true }),
@@ -399,8 +399,8 @@ export const x_495021_konnect_wallet_ledger = Table({
  * 9. PURCHASE TRANSACTION TABLE
  * Point-of-sale transaction record generated by vendor, authorized via 60s QR.
  */
-export const x_495021_konnect_purchase_tx = Table({
-    name: 'x_495021_konnect_purchase_tx',
+export const x_2327324_konnect_purchase_tx = Table({
+    name: 'x_2327324_konnect_purchase_tx',
     label: 'KonnectFest Purchase Transaction',
     display: 'transaction_id',
     autoNumber: {
@@ -413,17 +413,17 @@ export const x_495021_konnect_purchase_tx = Table({
         transaction_id: StringColumn({ label: 'Transaction ID', maxLength: 60, mandatory: true }),
         event: ReferenceColumn({
             label: 'Event',
-            referenceTable: 'x_495021_konnect_event',
+            referenceTable: 'x_2327324_konnect_event',
             mandatory: true,
         }),
         vendor: ReferenceColumn({
             label: 'Vendor',
-            referenceTable: 'x_495021_konnect_vendor',
+            referenceTable: 'x_2327324_konnect_vendor',
             mandatory: true,
         }),
         participant: ReferenceColumn({
             label: 'Participant',
-            referenceTable: 'x_495021_konnect_participant',
+            referenceTable: 'x_2327324_konnect_participant',
         }),
         item_description: StringColumn({ label: 'Item / Service Description', maxLength: 200, mandatory: true }),
         amount: DecimalColumn({ label: 'Amount (INR)', scale: 2, mandatory: true }),
@@ -452,8 +452,8 @@ export const x_495021_konnect_purchase_tx = Table({
  * 10. VENDOR LEDGER TABLE
  * Records sales credits due to each vendor from successful transactions.
  */
-export const x_495021_konnect_vendor_ledger = Table({
-    name: 'x_495021_konnect_vendor_ledger',
+export const x_2327324_konnect_vendor_ledger = Table({
+    name: 'x_2327324_konnect_vendor_ledger',
     label: 'KonnectFest Vendor Ledger',
     display: 'number',
     autoNumber: {
@@ -465,17 +465,17 @@ export const x_495021_konnect_vendor_ledger = Table({
         number: StringColumn({ label: 'Number', maxLength: 40, readOnly: true }),
         vendor: ReferenceColumn({
             label: 'Vendor',
-            referenceTable: 'x_495021_konnect_vendor',
+            referenceTable: 'x_2327324_konnect_vendor',
             mandatory: true,
         }),
         event: ReferenceColumn({
             label: 'Event',
-            referenceTable: 'x_495021_konnect_event',
+            referenceTable: 'x_2327324_konnect_event',
             mandatory: true,
         }),
         purchase_transaction: ReferenceColumn({
             label: 'Purchase Transaction',
-            referenceTable: 'x_495021_konnect_purchase_tx',
+            referenceTable: 'x_2327324_konnect_purchase_tx',
             mandatory: true,
         }),
         credit_amount: DecimalColumn({ label: 'Credit Amount (INR)', scale: 2, mandatory: true }),
@@ -497,30 +497,30 @@ export const x_495021_konnect_vendor_ledger = Table({
  * 11. DIGITAL COUPON / PURCHASE RECEIPT TABLE
  * Entitlement and proof of purchase receipt (NOT a discount code).
  */
-export const x_495021_konnect_digital_coupon = Table({
-    name: 'x_495021_konnect_digital_coupon',
+export const x_2327324_konnect_digital_coupon = Table({
+    name: 'x_2327324_konnect_digital_coupon',
     label: 'KonnectFest Digital Coupon Receipt',
     display: 'coupon_id',
     schema: {
         coupon_id: StringColumn({ label: 'Coupon / Receipt ID', maxLength: 60, mandatory: true }),
         purchase_transaction: ReferenceColumn({
             label: 'Purchase Transaction',
-            referenceTable: 'x_495021_konnect_purchase_tx',
+            referenceTable: 'x_2327324_konnect_purchase_tx',
             mandatory: true,
         }),
         event: ReferenceColumn({
             label: 'Event',
-            referenceTable: 'x_495021_konnect_event',
+            referenceTable: 'x_2327324_konnect_event',
             mandatory: true,
         }),
         vendor: ReferenceColumn({
             label: 'Vendor',
-            referenceTable: 'x_495021_konnect_vendor',
+            referenceTable: 'x_2327324_konnect_vendor',
             mandatory: true,
         }),
         participant: ReferenceColumn({
             label: 'Participant',
-            referenceTable: 'x_495021_konnect_participant',
+            referenceTable: 'x_2327324_konnect_participant',
             mandatory: true,
         }),
         item_description: StringColumn({ label: 'Item Description', maxLength: 200 }),
@@ -542,8 +542,8 @@ export const x_495021_konnect_digital_coupon = Table({
  * 12. REFUND REQUEST TABLE
  * Post-event balance redemption requests submitted by participants.
  */
-export const x_495021_konnect_refund_request = Table({
-    name: 'x_495021_konnect_refund_request',
+export const x_2327324_konnect_refund_request = Table({
+    name: 'x_2327324_konnect_refund_request',
     label: 'KonnectFest Refund Request',
     display: 'number',
     autoNumber: {
@@ -555,17 +555,17 @@ export const x_495021_konnect_refund_request = Table({
         number: StringColumn({ label: 'Number', maxLength: 40, readOnly: true }),
         participant: ReferenceColumn({
             label: 'Participant',
-            referenceTable: 'x_495021_konnect_participant',
+            referenceTable: 'x_2327324_konnect_participant',
             mandatory: true,
         }),
         wallet: ReferenceColumn({
             label: 'Wallet',
-            referenceTable: 'x_495021_konnect_wallet',
+            referenceTable: 'x_2327324_konnect_wallet',
             mandatory: true,
         }),
         event: ReferenceColumn({
             label: 'Event',
-            referenceTable: 'x_495021_konnect_event',
+            referenceTable: 'x_2327324_konnect_event',
             mandatory: true,
         }),
         requested_amount: DecimalColumn({ label: 'Requested Amount (INR)', scale: 2, mandatory: true }),
@@ -600,8 +600,8 @@ export const x_495021_konnect_refund_request = Table({
  * 13. VENDOR SETTLEMENT TABLE
  * Aggregates vendor transactions into payout batches.
  */
-export const x_495021_konnect_settlement = Table({
-    name: 'x_495021_konnect_settlement',
+export const x_2327324_konnect_settlement = Table({
+    name: 'x_2327324_konnect_settlement',
     label: 'KonnectFest Vendor Settlement',
     display: 'number',
     autoNumber: {
@@ -614,12 +614,12 @@ export const x_495021_konnect_settlement = Table({
         batch_id: StringColumn({ label: 'Batch ID', maxLength: 60, mandatory: true }),
         event: ReferenceColumn({
             label: 'Event',
-            referenceTable: 'x_495021_konnect_event',
+            referenceTable: 'x_2327324_konnect_event',
             mandatory: true,
         }),
         vendor: ReferenceColumn({
             label: 'Vendor',
-            referenceTable: 'x_495021_konnect_vendor',
+            referenceTable: 'x_2327324_konnect_vendor',
             mandatory: true,
         }),
         total_credit_amount: DecimalColumn({ label: 'Total Credits (INR)', scale: 2 }),
@@ -650,8 +650,8 @@ export const x_495021_konnect_settlement = Table({
  * 14. AUDIT LOG TABLE
  * Records critical state transitions and audit trails.
  */
-export const x_495021_konnect_audit_log = Table({
-    name: 'x_495021_konnect_audit_log',
+export const x_2327324_konnect_audit_log = Table({
+    name: 'x_2327324_konnect_audit_log',
     label: 'KonnectFest Audit Log',
     display: 'number',
     autoNumber: {
@@ -663,7 +663,7 @@ export const x_495021_konnect_audit_log = Table({
         number: StringColumn({ label: 'Number', maxLength: 40, readOnly: true }),
         event: ReferenceColumn({
             label: 'Event',
-            referenceTable: 'x_495021_konnect_event',
+            referenceTable: 'x_2327324_konnect_event',
         }),
         action: StringColumn({ label: 'Action', maxLength: 100, mandatory: true }),
         target_record: StringColumn({ label: 'Target Record Ref', maxLength: 100 }),

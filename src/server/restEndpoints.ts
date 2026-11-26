@@ -29,7 +29,7 @@ export function handleParticipantRegistration(request: any, response: any) {
         }
 
         // Duplicate email check for same event
-        const dupCheck = new GlideRecord('x_495021_konnect_participant')
+        const dupCheck = new GlideRecord('x_2327324_konnect_participant')
         dupCheck.addQuery('email', email)
         dupCheck.addQuery('event', eventSysId)
         dupCheck.query()
@@ -44,7 +44,7 @@ export function handleParticipantRegistration(request: any, response: any) {
         }
 
         // Create Participant record
-        const partGr = new GlideRecord('x_495021_konnect_participant')
+        const partGr = new GlideRecord('x_2327324_konnect_participant')
         partGr.initialize()
         partGr.setValue('name', name)
         partGr.setValue('email', email)
@@ -56,7 +56,7 @@ export function handleParticipantRegistration(request: any, response: any) {
         const partSysId = partGr.insert()
 
         // Create Registration record
-        const regGr = new GlideRecord('x_495021_konnect_registration')
+        const regGr = new GlideRecord('x_2327324_konnect_registration')
         regGr.initialize()
         regGr.setValue('participant', partSysId)
         regGr.setValue('event', eventSysId)
@@ -68,7 +68,7 @@ export function handleParticipantRegistration(request: any, response: any) {
         // If payment reference provided, create initial payment record
         let paymentSysId = ''
         if (requestedAmount > 0) {
-            const payGr = new GlideRecord('x_495021_konnect_payment')
+            const payGr = new GlideRecord('x_2327324_konnect_payment')
             payGr.initialize()
             payGr.setValue('type', 'initial_registration')
             payGr.setValue('participant', partSysId)
@@ -111,7 +111,7 @@ export function handleTopUpRequest(request: any, response: any) {
             return
         }
 
-        const payGr = new GlideRecord('x_495021_konnect_payment')
+        const payGr = new GlideRecord('x_2327324_konnect_payment')
         payGr.initialize()
         payGr.setValue('type', 'event_topup')
         payGr.setValue('participant', participantSysId)

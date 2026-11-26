@@ -2,11 +2,11 @@ import { UiPage } from '@servicenow/sdk/core'
 
 /**
  * 1. PARTICIPANT MOBILE PORTAL UI PAGE
- * Endpoint: x_495021_konnect_participant_portal.do
+ * Endpoint: x_2327324_konnect_participant_portal.do
  */
 export const pageParticipantPortal = UiPage({
     $id: Now.ID['page_participant_portal'],
-    endpoint: 'x_495021_konnect_participant_portal.do',
+    endpoint: 'x_2327324_konnect_participant_portal.do',
     category: 'general',
     description: 'KonnectFest Participant Mobile Portal - Registration, Wallet, Top-Up, QR Confirmation, and Refunds',
     html: `<!DOCTYPE html>
@@ -251,7 +251,7 @@ export const pageParticipantPortal = UiPage({
             const token = document.getElementById('qrTokenInput').value.trim();
             if (!token) return showAlert('Please enter a valid QR token', 'error');
 
-            fetch('/api/x_495021_konnect/v1/vendor/qr-details?qr_token=' + encodeURIComponent(token))
+            fetch('/api/x_2327324_konnect/v1/vendor/qr-details?qr_token=' + encodeURIComponent(token))
                 .then(r => r.json())
                 .then(res => {
                     const data = res.result || res;
@@ -270,7 +270,7 @@ export const pageParticipantPortal = UiPage({
 
         function executeConfirmPurchase() {
             if (!currentTxSysId) return;
-            fetch('/api/x_495021_konnect/v1/purchase/confirm', {
+            fetch('/api/x_2327324_konnect/v1/purchase/confirm', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -303,7 +303,7 @@ export const pageParticipantPortal = UiPage({
             const utr = document.getElementById('topupUtr').value.trim();
             if (!amount || amount <= 0) return showAlert('Enter a valid amount', 'error');
 
-            fetch('/api/x_495021_konnect/v1/wallet/topup', {
+            fetch('/api/x_2327324_konnect/v1/wallet/topup', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -337,7 +337,7 @@ export const pageParticipantPortal = UiPage({
                 return showAlert('Please fill all required bank details', 'error');
             }
 
-            fetch('/api/x_495021_konnect/v1/refund/request', {
+            fetch('/api/x_2327324_konnect/v1/refund/request', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -375,7 +375,7 @@ export const pageParticipantPortal = UiPage({
 
             if (!name || !email) return showAlert('Name and email are mandatory', 'error');
 
-            fetch('/api/x_495021_konnect/v1/registration', {
+            fetch('/api/x_2327324_konnect/v1/registration', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -406,11 +406,11 @@ export const pageParticipantPortal = UiPage({
 
 /**
  * 2. VENDOR WORKSPACE UI PAGE
- * Endpoint: x_495021_konnect_vendor_workspace.do
+ * Endpoint: x_2327324_konnect_vendor_workspace.do
  */
 export const pageVendorWorkspace = UiPage({
     $id: Now.ID['page_vendor_workspace'],
-    endpoint: 'x_495021_konnect_vendor_workspace.do',
+    endpoint: 'x_2327324_konnect_vendor_workspace.do',
     category: 'general',
     description: 'KonnectFest Vendor Terminal - Create Purchase, 60-Second Ephemeral QR, and Stall Sales Dashboard',
     html: `<!DOCTYPE html>
@@ -495,7 +495,7 @@ export const pageVendorWorkspace = UiPage({
             const amount = parseFloat(document.getElementById('vAmount').value);
             if (!item || !amount || amount <= 0) return alert('Enter valid item and amount');
 
-            fetch('/api/x_495021_konnect/v1/vendor/create-qr', {
+            fetch('/api/x_2327324_konnect/v1/vendor/create-qr', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -547,7 +547,7 @@ export const pageVendorWorkspace = UiPage({
 
             // Poll transaction status
             pollInterval = setInterval(() => {
-                fetch('/api/x_495021_konnect/v1/vendor/qr-details?qr_token=' + encodeURIComponent(data.qrToken))
+                fetch('/api/x_2327324_konnect/v1/vendor/qr-details?qr_token=' + encodeURIComponent(data.qrToken))
                     .then(r => r.json())
                     .then(res => {
                         const qData = res.result || res;
@@ -566,11 +566,11 @@ export const pageVendorWorkspace = UiPage({
 
 /**
  * 3. FINANCE WORKSPACE UI PAGE
- * Endpoint: x_495021_konnect_financer_workspace.do
+ * Endpoint: x_2327324_konnect_financer_workspace.do
  */
 export const pageFinanceWorkspace = UiPage({
     $id: Now.ID['page_finance_workspace'],
-    endpoint: 'x_495021_konnect_financer_workspace.do',
+    endpoint: 'x_2327324_konnect_financer_workspace.do',
     category: 'general',
     description: 'KonnectFest Finance Workspace - Bank Payment Verification, UTR Checking, Refunds, and Settlements',
     html: `<!DOCTYPE html>
@@ -668,7 +668,7 @@ export const pageFinanceWorkspace = UiPage({
             const utr = prompt('Confirm Bank Statement UTR match for ₹' + amount + ' credit:');
             if (!utr) return;
 
-            fetch('/api/x_495021_konnect/v1/finance/verify-payment', {
+            fetch('/api/x_2327324_konnect/v1/finance/verify-payment', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -690,11 +690,11 @@ export const pageFinanceWorkspace = UiPage({
 
 /**
  * 4. ORGANIZER DASHBOARD UI PAGE
- * Endpoint: x_495021_konnect_organizer_dashboard.do
+ * Endpoint: x_2327324_konnect_organizer_dashboard.do
  */
 export const pageOrganizerDashboard = UiPage({
     $id: Now.ID['page_organizer_dashboard'],
-    endpoint: 'x_495021_konnect_organizer_dashboard.do',
+    endpoint: 'x_2327324_konnect_organizer_dashboard.do',
     category: 'general',
     description: 'KonnectFest Organizer Dashboard - Event Overview, Wallet Liability, Vendor Performance, and Event Closure',
     html: `<!DOCTYPE html>

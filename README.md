@@ -20,7 +20,7 @@ KonnectFest is a native ServiceNow scoped application designed for college festi
 ## 🏗️ Architecture & Technical Stack
 
 - **Target Instance**: `https://dev495021.service-now.com`
-- **Application Scope**: `x_495021_konnect`
+- **Application Scope**: `x_2327324_konnect`
 - **SDK**: ServiceNow Fluent SDK v4.14.3 (`@servicenow/sdk`, `@servicenow/glide`)
 - **Runtime**: Native ServiceNow Platform (Server Scripts, Business Rules, Script Includes, Scripted REST APIs, Native UI Pages, and ACLs)
 - **Currency**: INR (₹)
@@ -30,10 +30,10 @@ KonnectFest is a native ServiceNow scoped application designed for college festi
 
 ## 👥 Application Roles
 
-1. **`x_495021_konnect.organizer_admin`** (Organizer / Administrator): Manages events, stalls, vendors, bulk wallet allocation, and event closure.
-2. **`x_495021_konnect.financer`** (Financer): Verifies registration payments, top-up bank UTRs, approves refunds, and processes vendor settlements.
-3. **`x_495021_konnect.vendor`** (Vendor): Operates assigned stall, enters purchases, displays 60-second transaction QR, and tracks stall sales.
-4. **`x_495021_konnect.participant`** (Participant): Registers, views wallet balance and ledger history, confirms vendor purchases, and requests unused balance refund.
+1. **`x_2327324_konnect.organizer_admin`** (Organizer / Administrator): Manages events, stalls, vendors, bulk wallet allocation, and event closure.
+2. **`x_2327324_konnect.financer`** (Financer): Verifies registration payments, top-up bank UTRs, approves refunds, and processes vendor settlements.
+3. **`x_2327324_konnect.vendor`** (Vendor): Operates assigned stall, enters purchases, displays 60-second transaction QR, and tracks stall sales.
+4. **`x_2327324_konnect.participant`** (Participant): Registers, views wallet balance and ledger history, confirms vendor purchases, and requests unused balance refund.
 
 ---
 

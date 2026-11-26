@@ -16,7 +16,7 @@ KonnectFestWalletHelper.prototype = Object.extendsObject(global.AbstractAjaxProc
         var participantId = this.getParameter('sysparm_participant_id');
         var eventId = this.getParameter('sysparm_event_id');
         
-        var gr = new GlideRecord('x_495021_konnect_wallet');
+        var gr = new GlideRecord('x_2327324_konnect_wallet');
         gr.addQuery('participant', participantId);
         gr.addQuery('event', eventId);
         gr.query();
@@ -58,7 +58,7 @@ KonnectFestQRHelper.prototype = Object.extendsObject(global.AbstractAjaxProcesso
 
     validateToken: function() {
         var token = this.getParameter('sysparm_qr_token');
-        var txGr = new GlideRecord('x_495021_konnect_purchase_tx');
+        var txGr = new GlideRecord('x_2327324_konnect_purchase_tx');
         txGr.addQuery('qr_token', token);
         txGr.query();
 
@@ -83,7 +83,7 @@ KonnectFestQRHelper.prototype = Object.extendsObject(global.AbstractAjaxProcesso
         }
 
         var vendorName = 'Vendor';
-        var venGr = new GlideRecord('x_495021_konnect_vendor');
+        var venGr = new GlideRecord('x_2327324_konnect_vendor');
         if (venGr.get(txGr.getValue('vendor'))) {
             vendorName = venGr.getValue('name');
         }
