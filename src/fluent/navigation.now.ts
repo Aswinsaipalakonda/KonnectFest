@@ -68,6 +68,28 @@ export const modParticipantPortal = Record({
     },
 })
 
+export const modPublicRegister = Record({
+    $id: Now.ID['mod_public_register'],
+    table: 'sys_app_module',
+    data: {
+        title: 'Public Registration Page',
+        application: konnectfestMenu,
+        link_type: 'DIRECT',
+        query: 'x_2327324_konnect_register.do',
+        active: true,
+        order: 450,
+    },
+})
+
+export const publicRegisterAccess = Record({
+    $id: Now.ID['sys_public_register'],
+    table: 'sys_public',
+    data: {
+        page: 'x_2327324_konnect_register',
+        active: true,
+    },
+})
+
 // 2. SEPARATOR: EVENT RECORDS
 export const modSepRecords = Record({
     $id: Now.ID['mod_sep_records'],

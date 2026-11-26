@@ -39,8 +39,6 @@ export const x_2327324_konnect_event = Table({
         }),
         upi_id: StringColumn({ label: 'Designated Event UPI ID', maxLength: 100, mandatory: true }),
         upi_payee_name: StringColumn({ label: 'Designated Payee Name', maxLength: 100, mandatory: true }),
-        min_topup_amount: DecimalColumn({ label: 'Min Top-up Amount (INR)', scale: 2 }),
-        max_topup_amount: DecimalColumn({ label: 'Max Top-up Amount (INR)', scale: 2 }),
         redemption_window_open: BooleanColumn({ label: 'Redemption Window Open', default: false }),
         redemption_deadline: DateTimeColumn({ label: 'Redemption Deadline' }),
         description: StringColumn({ label: 'Description', maxLength: 1000 }),

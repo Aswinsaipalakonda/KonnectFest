@@ -11,18 +11,18 @@ export interface QRGenerationResult {
 }
 
 /**
- * Service to manage ephemeral, secure 60-second QR tokens for vendor purchases.
+ * Service to manage ephemeral, secure 120-second QR tokens for vendor purchases.
  */
 export class KonnectFestQRService {
     /**
-     * Vendor creates a pending purchase transaction and receives a 60-second QR token.
+     * Vendor creates a pending purchase transaction and receives a 120-second QR token.
      */
     static generatePurchaseQR(
         eventSysId: string,
         vendorSysId: string,
         itemDescription: string,
         amount: number,
-        expirySeconds: number = 60
+        expirySeconds: number = 120
     ): QRGenerationResult {
         if (amount <= 0) {
             return { success: false, message: 'Purchase amount must be greater than zero.' }
@@ -118,7 +118,7 @@ export class KonnectFestQRService {
             if (nowGdt.after(expGdt)) {
                 isExpired = true
                 txGr.setValue('status', 'expired')
-                txGr.setValue('rejection_reason', 'QR token expired (60s limit)')
+                txGr.setValue('rejection_reason', 'QR token expired (120s limit)')
                 txGr.update()
                 return { valid: false, message: 'QR token has expired. Vendor must generate a new QR.' }
             }

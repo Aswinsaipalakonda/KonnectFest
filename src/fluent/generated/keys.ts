@@ -167,6 +167,10 @@ declare global {
                         table: 'sys_app_module'
                         id: 'd7e4b7e005384c70a4eb768e7c61ca2c'
                     }
+                    mod_public_register: {
+                        table: 'sys_app_module'
+                        id: 'c30225bbd4af4ef4a94800d76d09b1d4'
+                    }
                     mod_purchase_tx: {
                         table: 'sys_app_module'
                         id: '3c1efd94ad5841ee8f5ee5cdf3d20344'
@@ -223,13 +227,53 @@ declare global {
                         table: 'sys_ws_operation'
                         id: '4b0341dfbf6142c88484a8062b2cebe6'
                     }
+                    route_finance_queues: {
+                        table: 'sys_ws_operation'
+                        id: '05cb55e455bf4b8b95a0f8dd4b82324d'
+                    }
                     route_get_qr_details: {
                         table: 'sys_ws_operation'
                         id: '2aeab9345cc54f4b9b1dc329e91ef24d'
                     }
+                    route_organizer_event: {
+                        table: 'sys_ws_operation'
+                        id: '128515df120e4a37ae8a734fd7eec46d'
+                    }
+                    route_organizer_overview: {
+                        table: 'sys_ws_operation'
+                        id: 'c4ccf9cf5d81477086f95d4dbed5bce7'
+                    }
+                    route_organizer_vendor: {
+                        table: 'sys_ws_operation'
+                        id: 'b9016d1642cb45cba76e317271433c88'
+                    }
+                    route_participant_dashboard: {
+                        table: 'sys_ws_operation'
+                        id: '36686d8eb08049bab21fce3f3eb4cca6'
+                    }
+                    route_pay_settlement: {
+                        table: 'sys_ws_operation'
+                        id: 'eb6878fa39084cb4a791b284ea334260'
+                    }
+                    route_public_events: {
+                        table: 'sys_ws_operation'
+                        id: '0b1d3a1225eb4fbf898cf6e952ed2534'
+                    }
                     route_register: {
                         table: 'sys_ws_operation'
                         id: '1f02b6dfca2a4842b51c0c3a3572d880'
+                    }
+                    route_register_utr: {
+                        table: 'sys_ws_operation'
+                        id: '29039b2613c34804bae34aa7dc88b74f'
+                    }
+                    route_reject_payment: {
+                        table: 'sys_ws_operation'
+                        id: 'f5ff91eb583a4deebb21b44b4214faa2'
+                    }
+                    route_reject_refund: {
+                        table: 'sys_ws_operation'
+                        id: '5274b48fd80b45d78038b61e766fde5a'
                     }
                     route_request_refund: {
                         table: 'sys_ws_operation'
@@ -246,6 +290,10 @@ declare global {
                     route_vendor_create_qr: {
                         table: 'sys_ws_operation'
                         id: '1236dda6f5964a22b4796493309caf57'
+                    }
+                    route_vendor_dashboard: {
+                        table: 'sys_ws_operation'
+                        id: '7a1cb88b04ea48d68bffeff3f87e630b'
                     }
                     route_verify_payment: {
                         table: 'sys_ws_operation'
@@ -286,6 +334,10 @@ declare global {
                     src_server_walletService_ts: {
                         table: 'sys_module'
                         id: '1e133c25b0cb4121b1c4e65f437cacb6'
+                    }
+                    sys_public_register: {
+                        table: 'sys_public'
+                        id: '37986823673247bc8293576a054c70fe'
                     }
                 }
                 composite: [
@@ -1722,6 +1774,7 @@ declare global {
                     {
                         table: 'sys_dictionary'
                         id: '255cb3b4e5a3407ba4b294b1717bfcab'
+                        deleted: true
                         key: {
                             name: 'x_2327324_konnect_event'
                             element: 'max_topup_amount'
@@ -5587,6 +5640,13 @@ declare global {
                         }
                     },
                     {
+                        table: 'sys_ui_page'
+                        id: '87ff5aaef0044a8cb498b8b66d4dc4ba'
+                        key: {
+                            endpoint: 'x_2327324_konnect_register.do'
+                        }
+                    },
+                    {
                         table: 'sys_documentation'
                         id: '88c40953141c4bf3bf063720fd77d955'
                         deleted: true
@@ -5837,6 +5897,7 @@ declare global {
                     {
                         table: 'sys_documentation'
                         id: '8fe830a708984e35a1b6855065eb6ee7'
+                        deleted: true
                         key: {
                             name: 'x_2327324_konnect_event'
                             element: 'min_topup_amount'
@@ -7155,6 +7216,7 @@ declare global {
                     {
                         table: 'sys_documentation'
                         id: 'acec9de8c2e346d2b63f534bdbf7e7cd'
+                        deleted: true
                         key: {
                             name: 'x_2327324_konnect_event'
                             element: 'max_topup_amount'
@@ -9984,6 +10046,7 @@ declare global {
                     {
                         table: 'sys_dictionary'
                         id: 'f636f05b833944c8a69f9ed36b5a6f7a'
+                        deleted: true
                         key: {
                             name: 'x_2327324_konnect_event'
                             element: 'min_topup_amount'

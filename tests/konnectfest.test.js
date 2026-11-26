@@ -124,16 +124,16 @@ describe('KonnectFest Core Business & Security Tests', () => {
         assert.strictEqual(isDuplicateUtr, true, 'Same UTR cannot be verified twice')
     })
 
-    it('4. Ephemeral QR Token Expiry: 60-second time-bound validation', () => {
+    it('4. Ephemeral QR Token Expiry: 120-second time-bound validation', () => {
         const now = Date.now()
-        const validQR = { token: 'KF_QR_VALID', expiresAt: now + 45000 } // expires in 45s
+        const validQR = { token: 'KF_QR_VALID', expiresAt: now + 90000 } // expires in 90s (within 120s)
         const expiredQR = { token: 'KF_QR_EXPIRED', expiresAt: now - 5000 } // expired 5s ago
 
         const isQR1Valid = now < validQR.expiresAt
         const isQR2Valid = now < expiredQR.expiresAt
 
-        assert.strictEqual(isQR1Valid, true, 'QR within 60s must be valid')
-        assert.strictEqual(isQR2Valid, false, 'QR past 60s must be rejected')
+        assert.strictEqual(isQR1Valid, true, 'QR within 120s must be valid')
+        assert.strictEqual(isQR2Valid, false, 'QR past 120s must be rejected')
     })
 
     it('5. Insufficient Wallet Balance Rejection: Purchase blocked with no balance deduction', () => {

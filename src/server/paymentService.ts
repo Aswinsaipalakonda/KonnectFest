@@ -64,6 +64,17 @@ export class KonnectFestPaymentService {
         let walletRes
 
         if (payType === 'initial_registration') {
+            // Update registration status to verified
+            const regGr = new GlideRecord('x_2327324_konnect_registration')
+            regGr.addQuery('participant', paymentGr.getValue('participant'))
+            regGr.addQuery('event', paymentGr.getValue('event'))
+            regGr.query()
+            if (regGr.next()) {
+                regGr.setValue('status', 'verified')
+                regGr.setValue('payment_reference', utr)
+                regGr.update()
+            }
+
             // Provision or activate participant user identity
             KonnectFestPaymentService.provisionParticipantAccount(paymentGr.getValue('participant'))
 
