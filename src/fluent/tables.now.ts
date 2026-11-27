@@ -42,6 +42,7 @@ export const x_2327324_konnect_event = Table({
         redemption_window_open: BooleanColumn({ label: 'Redemption Window Open', default: false }),
         redemption_deadline: DateTimeColumn({ label: 'Redemption Deadline' }),
         description: StringColumn({ label: 'Description', maxLength: 1000 }),
+        registration_fee: DecimalColumn({ label: 'Registration Fee (INR)', scale: 2, default: 300.00 }),
     },
 })
 
@@ -87,6 +88,9 @@ export const x_2327324_konnect_participant = Table({
             default: 'pending_verification',
         }),
         verification_date: DateTimeColumn({ label: 'Verification Date' }),
+        access_password: StringColumn({ label: 'Portal Access Password', maxLength: 100 }),
+        reset_otp: StringColumn({ label: 'Reset OTP / PIN', maxLength: 10 }),
+        reset_otp_expiry: DateTimeColumn({ label: 'Reset OTP Expiry' }),
     },
 })
 
@@ -261,6 +265,7 @@ export const x_2327324_konnect_payment = Table({
             default: 'draft',
         }),
         proof_attachment_sys_id: StringColumn({ label: 'Payment Proof Attachment ID', maxLength: 40 }),
+        payment_screenshot_data: StringColumn({ label: 'Screenshot Base64 Data', maxLength: 8000 }),
         verified_by: ReferenceColumn({
             label: 'Verified By (Finance)',
             referenceTable: 'sys_user',
@@ -424,6 +429,7 @@ export const x_2327324_konnect_purchase_tx = Table({
             referenceTable: 'x_2327324_konnect_participant',
         }),
         item_description: StringColumn({ label: 'Item / Service Description', maxLength: 200, mandatory: true }),
+        order_items_json: StringColumn({ label: 'Order Line Items (JSON)', maxLength: 1000 }),
         amount: DecimalColumn({ label: 'Amount (INR)', scale: 2, mandatory: true }),
         qr_token: StringColumn({ label: 'Ephemeral QR Token', maxLength: 64, mandatory: true }),
         qr_expires_at: DateTimeColumn({ label: 'QR Expiry Timestamp' }),

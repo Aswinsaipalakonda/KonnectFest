@@ -22,6 +22,7 @@ import {
     handleRejectRefund,
     handleSettleVendor,
     handlePaySettlement,
+    handleParticipantAuth,
 } from '../server/restEndpoints'
 
 export const konnectfestApi = RestApi({
@@ -325,6 +326,19 @@ export const konnectfestApi = RestApi({
             enforceAcl: [],
             script: handleRequestRefund,
             shortDescription: 'Participant requests post-event unused balance refund with bank payout details',
+        },
+        {
+            $id: Now.ID['route_participant_auth'],
+            name: 'ParticipantAuth',
+            method: 'POST',
+            path: '/participant/auth',
+            active: true,
+            authentication: false,
+            authorization: false,
+            internalRole: false,
+            enforceAcl: [],
+            script: handleParticipantAuth,
+            shortDescription: 'Participant authentication, PIN reset, and change password',
         },
     ],
 })

@@ -1,0 +1,355 @@
+const fs = require('fs');
+const { execSync } = require('child_process');
+
+console.log('=== PREPARING FULL MULTI-ROLE SAAS APPLICATION UPGRADE ===');
+
+// =========================================================================
+// 1. UPDATE src/fluent/pages/register.html
+// =========================================================================
+const registerHtml = `<?xml version="1.0" encoding="utf-8" ?>
+<j:jelly trim="false" xmlns:j="jelly:core" xmlns:g="glide">
+<g:evaluate var="jvar_ck">gs.getSessionToken();</g:evaluate>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>KonnectFest - Event Registration &amp; Admission</title>
+    <style>
+        :root {
+            --sn-bg: #f8fafc;
+            --sn-card-bg: #ffffff;
+            --sn-header: #0f2e46;
+            --sn-text: #0f172a;
+            --sn-muted: #64748b;
+            --sn-border: #e2e8f0;
+            --sn-primary: #0072b2;
+            --sn-primary-hover: #005a8e;
+            --sn-success: #15803d;
+            --sn-success-bg: #dcfce7;
+            --sn-font: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: var(--sn-font);
+            background-color: var(--sn-bg);
+            color: var(--sn-text);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+        .public-nav {
+            background-color: var(--sn-header);
+            color: #fff;
+            padding: 12px 24px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+        .nav-brand {
+            font-size: 16px;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .nav-link-btn {
+            color: #cbd5e1;
+            text-decoration: none;
+            font-size: 13px;
+            font-weight: 600;
+            padding: 6px 12px;
+            border-radius: 4px;
+            border: 1px solid rgba(255,255,255,0.2);
+            transition: all 0.15s ease;
+        }
+        .nav-link-btn:hover { background: rgba(255,255,255,0.1); color: #fff; }
+        .reg-container {
+            max-width: 580px;
+            margin: 40px auto;
+            width: 100%;
+            padding: 0 16px;
+        }
+        .reg-card {
+            background: #fff;
+            border: 1px solid var(--sn-border);
+            border-radius: 8px;
+            padding: 28px;
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);
+        }
+        .reg-title {
+            font-size: 20px;
+            font-weight: 700;
+            margin-bottom: 4px;
+        }
+        .reg-subtitle {
+            font-size: 13px;
+            color: var(--sn-muted);
+            margin-bottom: 22px;
+            line-height: 1.4;
+        }
+        .fee-badge-box {
+            background: #f0fdf4;
+            border: 1px solid #bbf7d0;
+            border-radius: 6px;
+            padding: 12px 16px;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .fee-label { font-size: 12px; color: #166534; font-weight: 600; text-transform: uppercase; }
+        .fee-amount { font-size: 20px; font-weight: 800; color: #15803d; }
+        .form-group { margin-bottom: 16px; }
+        .form-label {
+            display: block;
+            font-size: 12px;
+            font-weight: 600;
+            margin-bottom: 6px;
+        }
+        .form-label .req { color: #b91c1c; font-weight: 700; }
+        .form-input, .form-select {
+            width: 100%;
+            padding: 9px 12px;
+            border: 1px solid var(--sn-border);
+            border-radius: 6px;
+            font-size: 13px;
+            outline: none;
+            color: var(--sn-text);
+            background: #fff;
+            transition: border-color 0.15s ease;
+        }
+        .form-input:focus, .form-select:focus {
+            border-color: var(--sn-primary);
+            box-shadow: 0 0 0 3px rgba(0, 114, 178, 0.1);
+        }
+        .btn-submit {
+            width: 100%;
+            padding: 11px;
+            background-color: var(--sn-primary);
+            color: #fff;
+            border: none;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.15s ease;
+            margin-top: 8px;
+        }
+        .btn-submit:hover { background-color: var(--sn-primary-hover); }
+        .btn-submit:disabled { opacity: 0.6; cursor: not-allowed; }
+        
+        /* Step 2 QR & Proof Upload */
+        .qr-card {
+            display: none;
+            text-align: center;
+        }
+        .qr-frame {
+            background: #fff;
+            display: inline-block;
+            padding: 14px;
+            border: 1px solid var(--sn-border);
+            border-radius: 8px;
+            margin: 16px 0;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.04);
+        }
+        .pay-details-box {
+            background: #f8fafc;
+            border: 1px solid var(--sn-border);
+            border-radius: 6px;
+            padding: 12px;
+            font-size: 12px;
+            text-align: left;
+            margin-bottom: 18px;
+        }
+        .pay-detail-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 4px;
+        }
+        .pay-detail-row strong { color: var(--sn-text); }
+        .file-upload-box {
+            border: 2px dashed #cbd5e1;
+            border-radius: 6px;
+            padding: 16px;
+            text-align: center;
+            background: #f8fafc;
+            cursor: pointer;
+            margin-bottom: 16px;
+            transition: border-color 0.15s ease;
+        }
+        .file-upload-box:hover { border-color: var(--sn-primary); }
+        .file-preview {
+            max-width: 100%;
+            max-height: 180px;
+            border-radius: 4px;
+            margin-top: 10px;
+            display: none;
+            border: 1px solid var(--sn-border);
+        }
+        .toast {
+            position: fixed;
+            bottom: 24px;
+            right: 24px;
+            padding: 12px 20px;
+            border-radius: 6px;
+            font-size: 13px;
+            font-weight: 600;
+            color: #fff;
+            display: none;
+            z-index: 9999;
+        }
+        .toast-error { background: #b91c1c; }
+        .toast-success { background: #15803d; }
+    </style>
+</head>
+<body>
+    <input type="hidden" id="g_ck_token" value="\${jvar_ck}" />
+
+    <header class="public-nav">
+        <div class="nav-brand">
+            <span style="color:#22c55e;">✦</span> KonnectFest Registration
+        </div>
+        <div>
+            <a href="/x_2327324_konnect_participant_portal.do" class="nav-link-btn">Already Registered? Log In &rarr;</a>
+        </div>
+    </header>
+
+    <div class="reg-container">
+        <!-- STEP 1: PARTICIPANT DETAILS -->
+        <div class="reg-card" id="step1Card">
+            <h1 class="reg-title">Event Registration &amp; Admission</h1>
+            <p class="reg-subtitle">
+                Register to receive your official festival pass. Enter your details below to proceed to the registration fee payment.
+            </p>
+
+            <div class="form-group">
+                <label class="form-label">Festival Event <span class="req">*</span></label>
+                <select id="rEvent" class="form-select" onchange="onEventSelectChange(this)">
+                    <option value="269873514734d3101e52eee3716d4339" data-fee="300" selected="selected">KonnectFest 2026 - Annual Fest (Registration Open)</option>
+                </select>
+            </div>
+
+            <div class="fee-badge-box">
+                <div>
+                    <div class="fee-label">Fixed Registration Fee</div>
+                    <div style="font-size:11px; color:#166534;">Festival admission &amp; portal activation</div>
+                </div>
+                <div class="fee-amount" id="dispRegFee">₹300.00</div>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Full Name <span class="req">*</span></label>
+                <input type="text" id="rName" class="form-input" placeholder="Enter your full legal name" />
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Working Email Address <span class="req">*</span></label>
+                <input type="email" id="rEmail" class="form-input" placeholder="Enter your working email address" />
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Mobile Phone Number (Strictly 10 Digits) <span class="req">*</span></label>
+                <input type="tel" id="rPhone" class="form-input" placeholder="Enter 10-digit mobile number" maxlength="10" pattern="[0-9]{10}" inputmode="numeric" oninput="this.value = this.value.replace(/[^0-9]/g, '').slice(0, 10);" />
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">College / Organization</label>
+                <input type="text" id="rCollege" class="form-input" placeholder="Enter college or company name" />
+            </div>
+
+            <button type="button" class="btn-submit" id="btnProceedToPay" onclick="proceedToPaymentQR()">
+                Proceed to Registration Fee Payment &rarr;
+            </button>
+        </div>
+
+        <!-- STEP 2: UPI PAYMENT & PROOF UPLOAD -->
+        <div class="reg-card qr-card" id="step2Card">
+            <h1 class="reg-title">Scan Official UPI QR to Pay</h1>
+            <p class="reg-subtitle">
+                Scan with Google Pay, PhonePe, or Paytm. Submit your 12-digit UTR and payment screenshot proof below for Finance verification.
+            </p>
+
+            <div class="qr-frame" id="regQrContainer"></div>
+
+            <div class="pay-details-box">
+                <div class="pay-detail-row">
+                    <span>Registration Fee:</span>
+                    <strong id="qrDispAmt">₹300.00</strong>
+                </div>
+                <div class="pay-detail-row">
+                    <span>Official Payee UPI:</span>
+                    <strong id="qrDispUpi">9849600480@ybl</strong>
+                </div>
+                <div class="pay-detail-row">
+                    <span>Payee Legal Name:</span>
+                    <strong id="qrDispPayee">KonnectFest Committee</strong>
+                </div>
+                <div class="pay-detail-row">
+                    <span>Payment Ref ID:</span>
+                    <strong id="qrDispRef" style="font-family:monospace;">-</strong>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">12-Digit Bank UTR / Transaction Reference <span class="req">*</span></label>
+                <input type="text" id="rUtr" class="form-input" placeholder="e.g. 432109876543" maxlength="24" />
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Upload Payment Screenshot / Receipt Proof <span class="req">*</span></label>
+                <div class="file-upload-box" onclick="document.getElementById('rProofFile').click()">
+                    <span style="font-size:24px;">📷</span>
+                    <div style="font-size:12px; font-weight:600; color:var(--sn-primary); margin-top:4px;">
+                        Click to select payment screenshot
+                    </div>
+                    <div style="font-size:11px; color:var(--sn-muted);">Supports PNG, JPG, JPEG (Max 5MB)</div>
+                    <input type="file" id="rProofFile" accept="image/*" style="display:none;" onchange="handleProofFileSelected(event)" />
+                    <img id="proofPreviewImg" class="file-preview" alt="Payment Proof" />
+                </div>
+            </div>
+
+            <div style="display:flex; gap:10px;">
+                <button type="button" class="btn-submit" style="background:#64748b;" onclick="backToStep1()">
+                    &larr; Back
+                </button>
+                <button type="button" class="btn-submit" id="btnSubmitUtr" onclick="submitRegistrationWithProof()">
+                    Submit Registration &amp; Proof &rarr;
+                </button>
+            </div>
+        </div>
+
+        <!-- STEP 3: SUBMITTED SUCCESS -->
+        <div class="reg-card qr-card" id="step3Card">
+            <div style="text-align:center; padding:16px 0;">
+                <div style="font-size:44px; margin-bottom:12px;">✅</div>
+                <h1 class="reg-title" style="color:#15803d;">Registration Submitted!</h1>
+                <p class="reg-subtitle" style="margin-bottom:20px;">
+                    Your payment reference and screenshot proof have been submitted to Finance for verification.
+                </p>
+                <div style="background:#f1f5f9; border-radius:6px; padding:16px; font-size:13px; text-align:left; line-height:1.5; margin-bottom:20px;">
+                    <strong>Next Steps:</strong>
+                    <ul style="margin-left:18px; margin-top:6px;">
+                        <li>Finance will verify your bank transfer UTR and receipt.</li>
+                        <li>Upon approval, your participant account and wallet will be activated.</li>
+                        <li>You will receive your login email and access PIN to log in at the Participant Portal.</li>
+                        <li>Inside the portal, you can top-up festival digital coupons anytime!</li>
+                    </ul>
+                </div>
+                <a href="/x_2327324_konnect_participant_portal.do" class="btn-submit" style="display:inline-block; text-decoration:none;">
+                    Go to Participant Portal &rarr;
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <div id="regToast" class="toast"></div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <script src="/api/x_2327324_konnect/konnectfest/public/script?page=register"></script>
+</body>
+</html>
+</j:jelly>`;
+
+fs.writeFileSync('src/fluent/pages/register.html', registerHtml, 'utf8');
+console.log('1. Generated src/fluent/pages/register.html with 10-digit mobile constraint and payment proof upload!');

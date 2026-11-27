@@ -251,6 +251,10 @@ declare global {
                         table: 'sys_ws_operation'
                         id: 'b9016d1642cb45cba76e317271433c88'
                     }
+                    route_participant_auth: {
+                        table: 'sys_ws_operation'
+                        id: '26ba09d6c35a473e8123cd0a378e1313'
+                    }
                     route_participant_dashboard: {
                         table: 'sys_ws_operation'
                         id: '36686d8eb08049bab21fce3f3eb4cca6'
@@ -343,9 +347,25 @@ declare global {
                         table: 'sys_module'
                         id: '1e133c25b0cb4121b1c4e65f437cacb6'
                     }
+                    sys_public_finance_workspace: {
+                        table: 'sys_public'
+                        id: 'efa64f9a097f4f12af49aa7ba3396fa3'
+                    }
+                    sys_public_organizer_dashboard: {
+                        table: 'sys_public'
+                        id: 'd802b8f35e4046b2af77b1f02c5d7ed7'
+                    }
+                    sys_public_participant_portal: {
+                        table: 'sys_public'
+                        id: '99f986a129354b199305f0be0da5050f'
+                    }
                     sys_public_register: {
                         table: 'sys_public'
                         id: '37986823673247bc8293576a054c70fe'
+                    }
+                    sys_public_vendor_workspace: {
+                        table: 'sys_public'
+                        id: 'd4d06d2e64594f88a1f82e2a79044d5a'
                     }
                 }
                 composite: [
@@ -3542,6 +3562,14 @@ declare global {
                     },
                     {
                         table: 'sys_dictionary'
+                        id: '5578dedae2824f77baa1c39ad9fcc339'
+                        key: {
+                            name: 'x_2327324_konnect_event'
+                            element: 'registration_fee'
+                        }
+                    },
+                    {
+                        table: 'sys_dictionary'
                         id: '558d11948be348e08fe3be56837cd9cd'
                         key: {
                             name: 'x_2327324_konnect_settlement'
@@ -3563,6 +3591,15 @@ declare global {
                         key: {
                             name: 'x_2327324_konnect_digital_coupon'
                             element: 'item_description'
+                            language: 'en'
+                        }
+                    },
+                    {
+                        table: 'sys_documentation'
+                        id: '5622d7edb2864ff3acafcdf2ab7db0d0'
+                        key: {
+                            name: 'x_2327324_konnect_payment'
+                            element: 'payment_screenshot_data'
                             language: 'en'
                         }
                     },
@@ -3880,6 +3917,15 @@ declare global {
                         key: {
                             name: 'x_495021_konnect_event'
                             element: 'start_date'
+                            language: 'en'
+                        }
+                    },
+                    {
+                        table: 'sys_documentation'
+                        id: '5f32d93d54a04980a456db40d23ee585'
+                        key: {
+                            name: 'x_2327324_konnect_participant'
+                            element: 'reset_otp_expiry'
                             language: 'en'
                         }
                     },
@@ -4686,6 +4732,14 @@ declare global {
                         }
                     },
                     {
+                        table: 'sys_dictionary'
+                        id: '7014da824c28436db3026d2e714c9c76'
+                        key: {
+                            name: 'x_2327324_konnect_participant'
+                            element: 'reset_otp_expiry'
+                        }
+                    },
+                    {
                         table: 'sys_security_acl_role'
                         id: '7069b134b6784846b156dffec265290c'
                         deleted: true
@@ -5116,6 +5170,14 @@ declare global {
                         key: {
                             name: 'x_495021_konnect_payment'
                             element: 'NULL'
+                        }
+                    },
+                    {
+                        table: 'sys_dictionary'
+                        id: '7aaad0107c914c9aa5e00a8ff5ab89d8'
+                        key: {
+                            name: 'x_2327324_konnect_purchase_tx'
+                            element: 'order_items_json'
                         }
                     },
                     {
@@ -5771,6 +5833,14 @@ declare global {
                         }
                     },
                     {
+                        table: 'sys_dictionary'
+                        id: '8bed5ad893d848b6962158250c46a338'
+                        key: {
+                            name: 'x_2327324_konnect_participant'
+                            element: 'access_password'
+                        }
+                    },
+                    {
                         table: 'sys_documentation'
                         id: '8c086de3f4c34cadb59e079355078131'
                         key: {
@@ -6256,6 +6326,15 @@ declare global {
                         key: {
                             category: 'x_495021_konnect_wallet_ledger'
                             prefix: 'LED'
+                        }
+                    },
+                    {
+                        table: 'sys_documentation'
+                        id: '9a56cde002ee49a8aa263d1f2661a746'
+                        key: {
+                            name: 'x_2327324_konnect_purchase_tx'
+                            element: 'order_items_json'
+                            language: 'en'
                         }
                     },
                     {
@@ -7390,6 +7469,14 @@ declare global {
                         }
                     },
                     {
+                        table: 'sys_dictionary'
+                        id: 'b260232a47094373847b756943db6c35'
+                        key: {
+                            name: 'x_2327324_konnect_payment'
+                            element: 'payment_screenshot_data'
+                        }
+                    },
+                    {
                         table: 'sys_documentation'
                         id: 'b2714dfc4042444c917c98b1b73452f2'
                         deleted: true
@@ -7941,6 +8028,15 @@ declare global {
                         }
                     },
                     {
+                        table: 'sys_documentation'
+                        id: 'c0f61ff9a4ea48c39baac1294dd2dc98'
+                        key: {
+                            name: 'x_2327324_konnect_participant'
+                            element: 'reset_otp'
+                            language: 'en'
+                        }
+                    },
+                    {
                         table: 'sys_db_object'
                         id: 'c122664bc793487dbf9ec868c1e9d27e'
                         deleted: true
@@ -8173,6 +8269,14 @@ declare global {
                         key: {
                             name: 'x_495021_konnect_vendor_ledger'
                             element: 'number'
+                        }
+                    },
+                    {
+                        table: 'sys_dictionary'
+                        id: 'c85d15bc63544801ac2f4a294158ad1e'
+                        key: {
+                            name: 'x_2327324_konnect_participant'
+                            element: 'reset_otp'
                         }
                     },
                     {
@@ -9175,6 +9279,15 @@ declare global {
                     },
                     {
                         table: 'sys_documentation'
+                        id: 'e1e51bd73fef4e9d92e19994169b9529'
+                        key: {
+                            name: 'x_2327324_konnect_event'
+                            element: 'registration_fee'
+                            language: 'en'
+                        }
+                    },
+                    {
+                        table: 'sys_documentation'
                         id: 'e1e801f1444449cd947555009ec1b5f9'
                         key: {
                             name: 'x_2327324_konnect_wallet'
@@ -10135,6 +10248,15 @@ declare global {
                                     name: 'x_2327324_konnect.organizer_admin'
                                 }
                             }
+                        }
+                    },
+                    {
+                        table: 'sys_documentation'
+                        id: 'f94ddd030c974145aad881a5ad886e3d'
+                        key: {
+                            name: 'x_2327324_konnect_participant'
+                            element: 'access_password'
+                            language: 'en'
                         }
                     },
                     {

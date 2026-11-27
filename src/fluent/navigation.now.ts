@@ -90,6 +90,42 @@ export const publicRegisterAccess = Record({
     },
 })
 
+export const publicParticipantPortalAccess = Record({
+    $id: Now.ID['sys_public_participant_portal'],
+    table: 'sys_public',
+    data: {
+        page: 'x_2327324_konnect_participant_portal',
+        active: true,
+    },
+})
+
+export const publicVendorWorkspaceAccess = Record({
+    $id: Now.ID['sys_public_vendor_workspace'],
+    table: 'sys_public',
+    data: {
+        page: 'x_2327324_konnect_vendor_workspace',
+        active: true,
+    },
+})
+
+export const publicFinanceWorkspaceAccess = Record({
+    $id: Now.ID['sys_public_finance_workspace'],
+    table: 'sys_public',
+    data: {
+        page: 'x_2327324_konnect_financer_workspace',
+        active: true,
+    },
+})
+
+export const publicOrganizerDashboardAccess = Record({
+    $id: Now.ID['sys_public_organizer_dashboard'],
+    table: 'sys_public',
+    data: {
+        page: 'x_2327324_konnect_organizer_dashboard',
+        active: true,
+    },
+})
+
 // 2. SEPARATOR: EVENT RECORDS
 export const modSepRecords = Record({
     $id: Now.ID['mod_sep_records'],
