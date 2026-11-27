@@ -163,17 +163,19 @@ body { background: #ffffff; color: var(--sn-text-main); line-height: 1.5; font-s
             </p>
 
             <div class="sn-form-group" style="margin-bottom:14px;">
-                <label class="sn-form-label">Festival Event <span class="req">*</span></label>
-                <select id="rEvent" class="sn-form-select"></select>
+                <label class="sn-form-label">Festival Event <span class="req" style="color:#b91c1c; font-weight:700;">*</span></label>
+                <select id="rEvent" class="sn-form-select">
+                    <option value="269873514734d3101e52eee3716d4339" selected="selected">KonnectFest 2026 - Annual Fest (Registration Open)</option>
+                </select>
             </div>
 
             <div class="sn-form-group" style="margin-bottom:14px;">
-                <label class="sn-form-label">Full Name <span class="req">*</span></label>
+                <label class="sn-form-label">Full Name <span class="req" style="color:#b91c1c; font-weight:700;">*</span></label>
                 <input type="text" id="rName" class="sn-form-input" placeholder="Enter your full name" />
             </div>
 
             <div class="sn-form-group" style="margin-bottom:14px;">
-                <label class="sn-form-label">Working Email Address <span class="req">*</span></label>
+                <label class="sn-form-label">Working Email Address <span class="req" style="color:#b91c1c; font-weight:700;">*</span></label>
                 <input type="email" id="rEmail" class="sn-form-input" placeholder="Enter your working email address" />
             </div>
 
@@ -183,8 +185,8 @@ body { background: #ffffff; color: var(--sn-text-main); line-height: 1.5; font-s
             </div>
 
             <div class="sn-form-group" style="margin-bottom:20px;">
-                <label class="sn-form-label">Initial Wallet Funding (INR) <span class="req">*</span></label>
-                <input type="number" id="rAmount" class="sn-form-input" min="1" step="1" value="500" />
+                <label class="sn-form-label">Initial Wallet Funding (INR) <span class="req" style="color:#b91c1c; font-weight:700;">*</span></label>
+                <input type="number" id="rAmount" class="sn-form-input" min="1" step="1" value="" placeholder="Enter initial wallet amount (e.g. 500)" />
             </div>
 
             <button class="sn-btn sn-btn-primary" style="width:100%; padding:11px; font-size:13px;" onclick="submitPublicReg()">Proceed to UPI Payment QR →</button>
@@ -221,7 +223,7 @@ body { background: #ffffff; color: var(--sn-text-main); line-height: 1.5; font-s
             </div>
 
             <div class="sn-form-group" style="text-align:left; margin-bottom:18px;">
-                <label class="sn-form-label">12-Digit Bank UTR / Transaction Reference <span class="req">*</span></label>
+                <label class="sn-form-label">12-Digit Bank UTR / Transaction Reference <span class="req" style="color:#b91c1c; font-weight:700;">*</span></label>
                 <input type="text" id="rUtr" class="sn-form-input" placeholder="e.g. 432109876543" maxlength="32" />
             </div>
 
