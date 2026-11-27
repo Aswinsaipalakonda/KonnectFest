@@ -7,6 +7,7 @@ import {
     handleOrganizerOverview,
     handleOrganizerEventAction,
     handleOrganizerVendorAction,
+    handleBulkAllocateWallets,
     handleFinanceQueues,
     handleTopUpRequest,
     handleVendorDashboard,
@@ -123,6 +124,19 @@ export const konnectfestApi = RestApi({
             enforceAcl: [],
             script: handleOrganizerVendorAction,
             shortDescription: 'Onboard and authorize a new vendor stall',
+        },
+        {
+            $id: Now.ID['route_organizer_bulk_allocate'],
+            name: 'OrganizerBulkAllocateWallets',
+            method: 'POST',
+            path: '/organizer/bulk-allocate',
+            active: true,
+            authentication: false,
+            authorization: false,
+            internalRole: false,
+            enforceAcl: [],
+            script: handleBulkAllocateWallets,
+            shortDescription: 'Organizer bulk wallet allocation and participant coupon provisioning',
         },
 
         // FINANCE ROUTES

@@ -31,7 +31,7 @@
     --sn-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.08), 0 1px 2px -1px rgba(0, 0, 0, 0.08);
 }
 * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; }
-body { background: #ffffff; color: var(--sn-text-main); line-height: 1.5; font-size: 13px; }
+body { background: #ffffff; color: var(--sn-text-main); line-height: 1.5; font-size: 13px; min-height: 100vh; }
 
 /* TOP POLARIS HEADER */
 .sn-header { background: var(--sn-navy); color: #ffffff; padding: 12px 24px; display: flex; align-items: center; justify-content: space-between; border-bottom: 2px solid var(--sn-teal); }
@@ -46,31 +46,34 @@ body { background: #ffffff; color: var(--sn-text-main); line-height: 1.5; font-s
 
 /* ACTION RIBBON / BREADCRUMB BAR */
 .sn-ribbon { background: #ffffff; border-bottom: 1px solid var(--sn-border); padding: 14px 24px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 14px; }
-.sn-ribbon-info { display: flex; align-items: center; gap: 12px; }
+.sn-ribbon-info { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
 .sn-fest-title { font-size: 18px; font-weight: 700; color: var(--sn-navy-dark); display: flex; align-items: center; gap: 8px; }
 .sn-upi-badge { background: #f1f5f9; border: 1px solid #cbd5e1; padding: 4px 10px; border-radius: 6px; font-size: 11px; font-family: monospace; color: #334155; }
 .sn-ribbon-actions { display: flex; align-items: center; gap: 8px; }
 
 /* SERVICENOW BUTTONS */
-.sn-btn { padding: 7px 14px; border-radius: 6px; font-size: 12px; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; text-decoration: none; border: 1px solid transparent; transition: all 0.15s; }
+.sn-btn { padding: 8px 16px; border-radius: 6px; font-size: 12px; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 6px; text-decoration: none; border: 1px solid transparent; transition: all 0.15s; }
 .sn-btn-primary { background: var(--sn-navy-dark); color: #fff; }
 .sn-btn-primary:hover { background: #091f30; }
 .sn-btn-teal { background: var(--sn-teal); color: #fff; }
 .sn-btn-teal:hover { background: #046258; }
 .sn-btn-default { background: #ffffff; color: var(--sn-text-main); border-color: #cbd5e1; }
 .sn-btn-default:hover { background: #f8fafc; border-color: #94a3b8; }
-.sn-btn-sm { padding: 4px 10px; font-size: 11px; border-radius: 4px; }
+.sn-btn-sm { padding: 5px 12px; font-size: 11px; border-radius: 4px; }
+.sn-btn-danger { background: #fef2f2; color: #991b1b; border-color: #fecaca; }
+.sn-btn-danger:hover { background: #fee2e2; }
 
 /* WORKSPACE TABS */
 .sn-tabs-bar { background: #ffffff; border-bottom: 1px solid var(--sn-border); padding: 0 24px; display: flex; gap: 4px; overflow-x: auto; }
-.sn-tab { padding: 12px 16px; border: none; background: transparent; font-size: 13px; font-weight: 600; color: var(--sn-text-muted); cursor: pointer; border-bottom: 3px solid transparent; display: flex; align-items: center; gap: 8px; transition: all 0.15s; white-space: nowrap; }
+.sn-tab { padding: 12px 18px; border: none; background: transparent; font-size: 13px; font-weight: 600; color: var(--sn-text-muted); cursor: pointer; border-bottom: 3px solid transparent; display: flex; align-items: center; gap: 8px; transition: all 0.15s; white-space: nowrap; }
 .sn-tab:hover { color: var(--sn-navy-dark); }
 .sn-tab.active { color: var(--sn-navy-dark); border-bottom-color: var(--sn-teal); font-weight: 700; }
 
 /* MAIN CONTAINER */
 .sn-container { max-width: 1360px; margin: 0 auto; padding: 24px; }
+.sn-container-sm { max-width: 860px; margin: 0 auto; padding: 24px 16px; }
 
-/* KPI SCORECARDS (ServiceNow Enterprise Tile Style) */
+/* KPI SCORECARDS */
 .sn-kpi-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 24px; }
 @media (max-width: 1024px) { .sn-kpi-grid { grid-template-columns: repeat(2, 1fr); } }
 @media (max-width: 600px) { .sn-kpi-grid { grid-template-columns: 1fr; } }
@@ -84,9 +87,9 @@ body { background: #ffffff; color: var(--sn-text-main); line-height: 1.5; font-s
 .sn-kpi-val { font-size: 26px; font-weight: 800; color: var(--sn-navy-dark); letter-spacing: -0.5px; margin-bottom: 4px; }
 .sn-kpi-sub { font-size: 11px; color: var(--sn-text-muted); }
 
-/* SERVICENOW FORM and CARD SECTIONS */
+/* CARDS */
 .sn-card { background: #ffffff; border: 1px solid var(--sn-border); border-radius: var(--sn-radius); margin-bottom: 24px; box-shadow: var(--sn-shadow); overflow: hidden; }
-.sn-card-header { background: #f8fafc; border-bottom: 1px solid var(--sn-border); padding: 14px 20px; display: flex; align-items: center; justify-content: space-between; }
+.sn-card-header { background: #f8fafc; border-bottom: 1px solid var(--sn-border); padding: 14px 20px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px; }
 .sn-card-title { font-size: 14px; font-weight: 700; color: var(--sn-navy-dark); text-transform: uppercase; letter-spacing: 0.4px; }
 .sn-card-body { padding: 20px; }
 
@@ -96,32 +99,32 @@ body { background: #ffffff; color: var(--sn-text-main); line-height: 1.5; font-s
 .sn-form-group { display: flex; flex-direction: column; gap: 6px; }
 .sn-form-label { font-size: 12px; font-weight: 700; color: var(--sn-text-main); }
 .sn-form-label span.req { color: var(--sn-danger); }
-.sn-form-input, .sn-form-select { padding: 8px 12px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 13px; color: var(--sn-text-main); background: #ffffff; width: 100%; outline: none; }
+.sn-form-input, .sn-form-select { padding: 9px 12px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 13px; color: var(--sn-text-main); background: #ffffff; width: 100%; outline: none; transition: border-color 0.15s; }
 .sn-form-input:focus, .sn-form-select:focus { border-color: var(--sn-navy-dark); box-shadow: 0 0 0 2px rgba(15, 46, 70, 0.15); }
-.sn-form-input[readonly] { background: #f1f5f9; color: #475569; }
+.sn-form-input[readonly] { background: #f8fafc; color: #475569; }
 
 /* DATA TABLES */
 .sn-table-wrap { overflow-x: auto; }
 .sn-table { width: 100%; border-collapse: collapse; font-size: 12px; text-align: left; }
-.sn-table th { background: #f8fafc; color: #475569; font-weight: 700; text-transform: uppercase; font-size: 11px; letter-spacing: 0.4px; padding: 10px 14px; border-bottom: 1px solid var(--sn-border); }
+.sn-table th { background: #f8fafc; color: #475569; font-weight: 700; text-transform: uppercase; font-size: 11px; letter-spacing: 0.4px; padding: 10px 14px; border-bottom: 1px solid var(--sn-border); white-space: nowrap; }
 .sn-table td { padding: 12px 14px; border-bottom: 1px solid #f1f5f9; color: var(--sn-text-main); vertical-align: middle; }
 .sn-table tr:hover td { background: #f8fafc; }
 
-/* STATUS BADGES */
+/* BADGES */
 .sn-badge { display: inline-flex; align-items: center; gap: 4px; padding: 3px 8px; border-radius: 4px; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.3px; }
 .sn-badge-green { background: var(--sn-success-bg); color: var(--sn-success); border: 1px solid #a7f3d0; }
 .sn-badge-amber { background: var(--sn-warning-bg); color: var(--sn-warning); border: 1px solid #fde68a; }
 .sn-badge-blue { background: var(--sn-blue-light); color: var(--sn-blue); border: 1px solid #bae6fd; }
 .sn-badge-gray { background: #f1f5f9; color: #64748b; border: 1px solid #cbd5e1; }
 
-/* TOAST ALERT BANNER */
+/* ALERT BANNER */
 .sn-alert-bar { padding: 12px 18px; border-radius: 6px; font-size: 13px; font-weight: 600; margin-bottom: 18px; display: none; }
 .sn-alert-success { background: #ecfdf5; color: #065f46; border: 1px solid #a7f3d0; }
 .sn-alert-error { background: #fef2f2; color: #991b1b; border: 1px solid #fecaca; }
 
 /* MODALS */
 .sn-modal-backdrop { display: none; position: fixed; inset: 0; background: rgba(15, 23, 42, 0.6); z-index: 100; align-items: center; justify-content: center; padding: 16px; }
-.sn-modal-content { background: #ffffff; border-radius: 8px; width: 100%; max-width: 520px; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.2); overflow: hidden; border: 1px solid var(--sn-border); }
+.sn-modal-content { background: #ffffff; border-radius: 8px; width: 100%; max-width: 540px; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.2); overflow: hidden; border: 1px solid var(--sn-border); }
 .sn-modal-header { background: #f8fafc; border-bottom: 1px solid var(--sn-border); padding: 14px 20px; display: flex; align-items: center; justify-content: space-between; }
 .sn-modal-title { font-size: 15px; font-weight: 700; color: var(--sn-navy-dark); }
 .sn-modal-body { padding: 20px; max-height: 80vh; overflow-y: auto; }
@@ -132,87 +135,269 @@ body { background: #ffffff; color: var(--sn-text-main); line-height: 1.5; font-s
 <body style="background:#ffffff;">
     <input type="hidden" id="g_ck_token" value="${jvar_ck}" />
 
-<div class="topbar">
-    <div class="topbar-brand"><h1>KonnectFest Wallet</h1><span class="role-pill" id="partNamePill">Participant</span></div>
-    <button class="btn btn-sm btn-accent" onclick="loadParticipantDash()">↻ Refresh</button>
+<!-- TOP POLARIS HEADER -->
+<header class="sn-header">
+    <div class="sn-header-left">
+        <img src="" alt="KonnectFest Logo" class="sn-logo-img" />
+        <div class="sn-app-title">
+            KonnectFest Event Commerce
+            <span class="sn-scope-badge">Participant Wallet</span>
+        </div>
+    </div>
+    <div class="sn-header-right">
+        <div class="sn-user-pill">
+            <div class="sn-user-avatar">A</div>
+            <span id="partUserName">Participant</span>
+        </div>
+        <button class="sn-btn sn-btn-sm sn-btn-default" onclick="loadParticipantDash()" style="background:rgba(255,255,255,0.15); color:#fff; border-color:transparent;">↻ Refresh</button>
+        <a href="/login.do" class="sn-btn sn-btn-sm sn-btn-default" style="background:rgba(255,255,255,0.15); color:#fff; border-color:transparent;">Switch User</a>
+    </div>
+</header>
+
+<!-- ACTION RIBBON -->
+<div class="sn-ribbon">
+    <div class="sn-ribbon-info">
+        <span class="sn-fest-title" id="partFestTitle">KonnectFest 2026 - Annual Fest</span>
+        <span id="partEventStateBadge" class="sn-badge sn-badge-green">Active / Live Fest</span>
+        <span class="sn-upi-badge">Festival Payee UPI: <strong id="partEventUpi">konnectfest@axisbank</strong></span>
+    </div>
+    <div class="sn-ribbon-actions">
+        <button class="sn-btn sn-btn-sm sn-btn-teal" onclick="switchPartTab('tabTopup')">⚡ Top-Up Wallet</button>
+        <button class="sn-btn sn-btn-sm sn-btn-primary" onclick="switchPartTab('tabScan')">🛒 Pay Vendor</button>
+    </div>
 </div>
-<div class="container-sm">
-    <div id="partAlert" class="alert"></div>
-    <div class="card" style="background:linear-gradient(135deg, #0f4c81 0%, #1e3a8a 100%); color:#fff; border:none;">
-        <div style="display:flex; justify-content:space-between; align-items:center;">
-            <span style="font-size:12px; opacity:0.85; text-transform:uppercase; font-weight:700;" id="partEventName">Event Wallet</span>
-            <span class="badge" style="background:rgba(255,255,255,0.2); color:#fff;" id="partEventState">ACTIVE</span>
+
+<div class="sn-container-sm">
+    <div id="partToast" class="sn-alert-bar"></div>
+
+    <!-- DIGITAL WALLET CARD (POLARIS WHITE STYLE) -->
+    <div class="sn-kpi-card teal-top" style="margin-bottom:20px; box-shadow:0 4px 12px rgba(0,0,0,0.06);">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+            <span class="sn-kpi-label">Verified Available Balance</span>
+            <span class="sn-badge sn-badge-green" id="walletStatusBadge">Wallet Active</span>
         </div>
-        <div style="font-size:36px; font-weight:800; margin:10px 0 4px;" id="partBalance">₹0.00</div>
-        <div style="font-size:12px; opacity:0.85;">Verified Available Balance</div>
-        <div style="display:flex; justify-content:space-between; margin-top:16px; padding-top:12px; border-top:1px solid rgba(255,255,255,0.18); font-size:12px;">
-            <div>Reserved Hold: <strong id="partReserved">₹0.00</strong></div>
-            <div>Total Spent: <strong id="partSpent">₹0.00</strong></div>
-        </div>
-    </div>
-    <div class="tabs">
-        <button class="tab-btn active" onclick="switchPartTab('pScanTab', this)">Scan / Pay QR</button>
-        <button class="tab-btn" onclick="switchPartTab('pTopupTab', this)">Top-Up Funds</button>
-        <button class="tab-btn" onclick="switchPartTab('pHistoryTab', this)">Ledger &amp; Receipts</button>
-        <button class="tab-btn" onclick="switchPartTab('pRefundTab', this)">Refund</button>
-    </div>
-    <div id="pScanTab" class="part-tab">
-        <div class="card">
-            <div class="card-title">Confirm Vendor Purchase</div>
-            <div class="card-sub">Scan the vendor's 120-second QR with your phone camera, or paste the QR token below.</div>
-            <div class="form-group"><label class="form-label">Vendor QR Token</label><input type="text" id="pQrInput" class="form-input" placeholder="KF_QR_..." /></div>
-            <button class="btn btn-primary btn-block" onclick="lookupPartQR()">Review Purchase Details</button>
+        <div style="font-size:38px; font-weight:800; color:var(--sn-navy-dark); letter-spacing:-1px; margin-bottom:8px;" id="partAvailableBalance">₹0.00</div>
+        <div style="display:flex; justify-content:space-between; align-items:center; padding-top:12px; border-top:1px solid var(--sn-border); font-size:12px; color:var(--sn-text-muted);">
+            <div>Reserved Hold: <strong id="partReservedBalance" style="color:var(--sn-navy-dark);">₹0.00</strong></div>
+            <div>Total Spent: <strong id="partTotalSpent" style="color:var(--sn-navy-dark);">₹0.00</strong></div>
+            <div>Wallet ID: <code id="partWalletId" style="font-weight:700;">-</code></div>
         </div>
     </div>
-    <div id="pTopupTab" class="part-tab" style="display:none;">
-        <div class="card">
-            <div class="card-title">Add Funds to Wallet</div>
-            <div class="card-sub">Enter any amount to generate a UPI Funding QR. Funds are credited after Finance verifies your UTR.</div>
-            <div class="form-group"><label class="form-label">Top-Up Amount (INR)</label><input type="number" id="topupAmt" class="form-input" placeholder="e.g. 500" min="1" step="0.01" /></div>
-            <button class="btn btn-primary btn-block" onclick="createTopUpQR()">Generate UPI Funding QR</button>
-            <div id="topupQrSection" style="display:none; margin-top:20px; text-align:center; padding-top:16px; border-top:1px solid var(--border);">
-                <div class="qr-box" id="topupQrBox"></div>
-                <div style="font-size:12px; color:var(--muted); margin-top:8px;" id="topupPayeeInfo"></div>
-                <div class="form-group" style="text-align:left; margin-top:14px;"><label class="form-label">Enter 12-Digit Bank UTR after UPI Payment *</label><input type="text" id="topupUtrInput" class="form-input" placeholder="e.g. 432198765432" /></div>
-                <button class="btn btn-accent btn-block" onclick="submitTopUpUtr()">Submit UTR for Finance Verification</button>
+
+    <!-- TABS BAR -->
+    <div class="sn-tabs-bar" style="margin-bottom:20px; border:1px solid var(--sn-border); border-radius:8px;">
+        <button class="sn-tab active" id="btnTabScan" onclick="switchPartTab('tabScan')">🛒 Scan / Pay Vendor</button>
+        <button class="sn-tab" id="btnTabTopup" onclick="switchPartTab('tabTopup')">⚡ Top-Up Funds</button>
+        <button class="sn-tab" id="btnTabLedger" onclick="switchPartTab('tabLedger')">📑 Digital Receipts &amp; Ledger</button>
+        <button class="sn-tab" id="btnTabRefund" onclick="switchPartTab('tabRefund')">💸 Post-Event Refund</button>
+    </div>
+
+    <!-- TAB 1: SCAN &amp; PAY VENDOR QR -->
+    <div id="tabScan" class="sn-tab-content">
+        <div class="sn-card">
+            <div class="sn-card-header">
+                <div class="sn-card-title">Confirm Vendor Purchase</div>
+            </div>
+            <div class="sn-card-body">
+                <p style="font-size:12px; color:var(--sn-text-muted); margin-bottom:16px;">
+                    Enter or paste the 120-second one-time transaction token generated by the stall vendor terminal to review item details and authorize payment from your digital wallet.
+                </p>
+
+                <div class="sn-form-group" style="margin-bottom:14px;">
+                    <label class="sn-form-label">Vendor Transaction Token <span class="req">*</span></label>
+                    <div style="display:flex; gap:8px;">
+                        <input type="text" id="txTokenInput" class="sn-form-input" placeholder="e.g. KF_QR_a1b2c3d4e5" />
+                        <button class="sn-btn sn-btn-primary" onclick="lookupVendorQR()">Review Details →</button>
+                    </div>
+                </div>
+
+                <!-- CHECKOUT CONFIRMATION CARD -->
+                <div id="txDetailsBox" style="display:none; background:#f8fafc; border:2px solid var(--sn-teal); border-radius:8px; padding:20px; margin-top:20px;">
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+                        <span class="sn-badge sn-badge-blue" id="txTimerBadge">Active (120s Window)</span>
+                        <span style="font-size:11px; color:var(--sn-text-muted);" id="txCreatedAt">-</span>
+                    </div>
+
+                    <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:16px; font-size:13px;">
+                        <div>
+                            <span style="font-size:11px; color:var(--sn-text-muted); display:block;">Vendor Stall</span>
+                            <strong id="txStallName" style="color:var(--sn-navy-dark); font-size:15px;">-</strong>
+                        </div>
+                        <div>
+                            <span style="font-size:11px; color:var(--sn-text-muted); display:block;">Item Description</span>
+                            <strong id="txItemDesc" style="color:var(--sn-navy-dark); font-size:15px;">-</strong>
+                        </div>
+                    </div>
+
+                    <div style="background:#ffffff; border:1px solid #e2e8f0; border-radius:6px; padding:14px; display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+                        <span style="font-weight:700; color:var(--sn-navy-dark); font-size:14px;">Total Purchase Amount:</span>
+                        <span style="font-size:24px; font-weight:800; color:var(--sn-teal);" id="txAmountVal">₹0.00</span>
+                    </div>
+
+                    <div style="display:flex; gap:10px;">
+                        <button class="sn-btn sn-btn-teal" style="flex:2; padding:12px; font-size:13px;" onclick="confirmPurchasePayment()">✓ Confirm &amp; Authorize Wallet Debit</button>
+                        <button class="sn-btn sn-btn-default" style="flex:1;" onclick="cancelPurchaseLookup()">Cancel</button>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
-    <div id="pHistoryTab" class="part-tab" style="display:none;">
-        <div class="card"><div class="card-title">Digital Purchase Coupons / Receipts</div><div id="receiptsList" style="font-size:13px;"></div></div>
-        <div class="card"><div class="card-title">Wallet Ledger History</div><div id="ledgerList" style="font-size:13px;"></div></div>
+
+    <!-- TAB 2: TOP-UP FUNDS -->
+    <div id="tabTopup" class="sn-tab-content" style="display:none;">
+        <div class="sn-card">
+            <div class="sn-card-header">
+                <div class="sn-card-title">Top-Up Digital Wallet</div>
+            </div>
+            <div class="sn-card-body">
+                <p style="font-size:12px; color:var(--sn-text-muted); margin-bottom:16px;">
+                    Select or enter the top-up amount to generate an official UPI payment intent. Once Finance verifies the bank transfer, your wallet is credited instantly.
+                </p>
+
+                <!-- FAST SELECT CHIPS -->
+                <div style="display:flex; gap:8px; margin-bottom:14px; flex-wrap:wrap;">
+                    <button class="sn-btn sn-btn-default sn-btn-sm" onclick="setTopUpAmt(200)">+ ₹200</button>
+                    <button class="sn-btn sn-btn-default sn-btn-sm" onclick="setTopUpAmt(500)">+ ₹500</button>
+                    <button class="sn-btn sn-btn-default sn-btn-sm" onclick="setTopUpAmt(1000)">+ ₹1,000</button>
+                    <button class="sn-btn sn-btn-default sn-btn-sm" onclick="setTopUpAmt(2000)">+ ₹2,000</button>
+                </div>
+
+                <div class="sn-form-group" style="margin-bottom:16px;">
+                    <label class="sn-form-label">Top-Up Amount (INR) <span class="req">*</span></label>
+                    <input type="number" id="topupAmtInput" class="sn-form-input" min="1" step="1" value="500" />
+                </div>
+
+                <button class="sn-btn sn-btn-teal" style="width:100%; padding:10px;" onclick="submitTopUpRequest()">Generate Top-Up UPI Payment Intent →</button>
+
+                <!-- TOP-UP QR DISPLAY CONTAINER -->
+                <div id="topupQrBox" style="display:none; text-align:center; margin-top:24px; padding:20px; border:1px solid var(--sn-border); border-radius:8px; background:#f8fafc;">
+                    <h4 style="font-size:14px; font-weight:700; color:var(--sn-navy-dark); margin-bottom:12px;">Scan with Any UPI App to Complete Top-Up</h4>
+
+                    <div id="topupQrContainer" style="display:inline-flex; padding:12px; background:#fff; border:1px solid #cbd5e1; border-radius:8px; margin-bottom:16px;"></div>
+
+                    <!-- DEEP-LINK BUTTON FOR MOBILE -->
+                    <div style="margin-bottom:14px;">
+                        <a id="btnTopupDeepLink" href="#" class="sn-btn sn-btn-teal" style="width:100%; text-decoration:none; padding:11px; font-size:13px;">🚀 Open in UPI App (GPay / PhonePe / Paytm)</a>
+                    </div>
+
+                    <!-- COPY BUTTONS -->
+                    <div style="display:flex; gap:8px; justify-content:center; margin-bottom:16px; flex-wrap:wrap;">
+                        <button class="sn-btn sn-btn-default sn-btn-sm" onclick="copyText('topupVpaVal', 'UPI ID')">📋 Copy UPI: <span id="topupVpaVal">konnectfest@axisbank</span></button>
+                        <button class="sn-btn sn-btn-default sn-btn-sm" onclick="copyText('topupAmtDisp', 'Amount')">📋 Copy Amount: <span id="topupAmtDisp">₹500.00</span></button>
+                    </div>
+
+                    <div style="text-align:left; background:#fff; border:1px solid #e2e8f0; border-radius:6px; padding:14px; margin-bottom:16px;">
+                        <div class="sn-form-group">
+                            <label class="sn-form-label">12-Digit Bank UTR / Transaction Reference <span class="req">*</span></label>
+                            <input type="text" id="topupUtrInput" class="sn-form-input" placeholder="e.g. 987654321012" maxlength="32" />
+                        </div>
+                    </div>
+
+                    <button class="sn-btn sn-btn-primary" style="width:100%; padding:10px;" onclick="submitTopUpUtr()">Submit UTR for Finance Crediting →</button>
+                </div>
+            </div>
+        </div>
     </div>
-    <div id="pRefundTab" class="part-tab" style="display:none;">
-        <div class="card">
-            <div class="card-title">Post-Event Unused Balance Refund</div>
-            <div id="refundLockedMsg" class="alert alert-info" style="display:none;">Refund requests are enabled only after the Organizer marks the event as <strong>Completed</strong>.</div>
-            <div id="refundFormArea">
-                <div class="form-group"><label class="form-label">Refund Amount (INR) *</label><input type="number" id="rfAmt" class="form-input" placeholder="Amount up to available balance" min="1" step="0.01" /></div>
-                <div class="form-group"><label class="form-label">Account Holder Name *</label><input type="text" id="rfHolder" class="form-input" placeholder="Full Name" /></div>
-                <div class="form-group"><label class="form-label">Bank Account Number *</label><input type="text" id="rfAcct" class="form-input" placeholder="Account Number" /></div>
-                <div class="form-group"><label class="form-label">IFSC Code *</label><input type="text" id="rfIfsc" class="form-input" placeholder="e.g. SBIN0001234" /></div>
-                <div class="form-group"><label class="form-label">UPI ID (Optional)</label><input type="text" id="rfUpi" class="form-input" placeholder="name@upi" /></div>
-                <button class="btn btn-primary btn-block" onclick="submitPartRefund()">Request Refund &amp; Reserve Hold</button>
+
+    <!-- TAB 3: DIGITAL RECEIPTS &amp; LEDGER -->
+    <div id="tabLedger" class="sn-tab-content" style="display:none;">
+        <div class="sn-card">
+            <div class="sn-card-header">
+                <div class="sn-card-title">Digital Receipts &amp; Wallet Ledger</div>
+                <button class="sn-btn sn-btn-sm sn-btn-default" onclick="loadParticipantDash()">↻ Refresh Ledger</button>
+            </div>
+            <div class="sn-table-wrap">
+                <table class="sn-table">
+                    <thead>
+                        <tr>
+                            <th>Date / Time</th>
+                            <th>Entry Type</th>
+                            <th>Amount (INR)</th>
+                            <th>Balance After</th>
+                            <th>Reference / Item</th>
+                            <th>Digital Coupon</th>
+                        </tr>
+                    </thead>
+                    <tbody id="partLedgerTbody">
+                        <tr><td colspan="6" style="text-align:center; padding:24px; color:var(--sn-text-muted);">Loading ledger transactions...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- TAB 4: REFUND REMAINING BALANCE -->
+    <div id="tabRefund" class="sn-tab-content" style="display:none;">
+        <div class="sn-card">
+            <div class="sn-card-header">
+                <div class="sn-card-title">Post-Event Wallet Redemption / Refund</div>
+            </div>
+            <div class="sn-card-body">
+                <!-- LOCKED STATE WHEN EVENT ACTIVE -->
+                <div id="refundLockedNotice" style="background:#fffbeb; border:1px solid #fde68a; border-radius:6px; padding:16px; margin-bottom:16px;">
+                    <div style="font-weight:700; color:var(--sn-warning); margin-bottom:4px;">🔒 Wallet Refund Policy (Locked During Event)</div>
+                    <p style="font-size:12px; color:#78350f; margin:0;">
+                        In accordance with official festival guidelines, unused wallet balances can only be redeemed after the festival is marked <strong>Completed</strong> by the event organizer. During festival operations, wallet funds remain active for vendor purchases.
+                    </p>
+                </div>
+
+                <!-- UNLOCKED FORM WHEN EVENT COMPLETED -->
+                <div id="refundUnlockedForm" style="display:none;">
+                    <p style="font-size:12px; color:var(--sn-text-muted); margin-bottom:16px;">
+                        The festival has concluded! You may now request a full refund of your verified available wallet balance to your bank account via UPI.
+                    </p>
+
+                    <div style="background:#f8fafc; border:1px solid var(--sn-border); border-radius:6px; padding:14px; margin-bottom:16px;">
+                        <div style="display:flex; justify-content:space-between; margin-bottom:6px;">
+                            <span>Available Balance to Refund:</span>
+                            <strong style="color:var(--sn-teal); font-size:16px;" id="refundEligibleAmt">₹0.00</strong>
+                        </div>
+                    </div>
+
+                    <div class="sn-form-group" style="margin-bottom:14px;">
+                        <label class="sn-form-label">Your Receiving UPI ID / VPA <span class="req">*</span></label>
+                        <input type="text" id="refundUpiInput" class="sn-form-input" placeholder="e.g. yourname@oksbi" />
+                    </div>
+
+                    <div class="sn-form-group" style="margin-bottom:18px;">
+                        <label class="sn-form-label">Refund Amount (INR) <span class="req">*</span></label>
+                        <input type="number" id="refundAmtInput" class="sn-form-input" min="1" step="0.01" />
+                    </div>
+
+                    <button class="sn-btn sn-btn-teal" style="width:100%; padding:10px;" onclick="submitRefundClaim()">Submit Refund Claim to Finance →</button>
+                </div>
             </div>
         </div>
     </div>
 </div>
-<div id="pConfirmModal" class="modal-backdrop">
-    <div class="modal-card">
-        <span class="badge badge-warning" style="margin-bottom:8px;">120s Checkout Confirmation</span>
-        <h3 style="font-size:18px; margin-bottom:4px;" id="mVendor">Vendor</h3>
-        <p style="font-size:13px; color:var(--muted); margin-bottom:14px;" id="mEvent">Event</p>
-        <div style="background:#f8fafc; padding:14px; border-radius:8px; border:1px solid var(--border); margin-bottom:16px;">
-            <div style="font-size:12px; color:var(--muted);">Item Description</div>
-            <div style="font-size:15px; font-weight:700; margin-bottom:6px;" id="mItem">-</div>
-            <div style="font-size:28px; font-weight:800; color:var(--primary);" id="mAmt">₹0.00</div>
+
+<!-- DIGITAL COUPON RECEIPT MODAL -->
+<div id="couponModal" class="sn-modal-backdrop">
+    <div class="sn-modal-content">
+        <div class="sn-modal-header">
+            <div class="sn-modal-title">🎟️ Digital Coupon / Purchase Receipt</div>
+            <button class="sn-btn sn-btn-sm sn-btn-default" onclick="closeCouponModal()">✕</button>
         </div>
-        <div style="display:flex; gap:10px;">
-            <button class="btn btn-accent" style="flex:1;" onclick="confirmPartPurchase()">Confirm &amp; Pay</button>
-            <button class="btn btn-outline" style="flex:1;" onclick="closePartModal()">Cancel</button>
+        <div class="sn-modal-body" style="text-align:center;">
+            <div style="background:#f8fafc; border:2px dashed #cbd5e1; border-radius:8px; padding:20px; margin-bottom:16px;">
+                <div style="font-size:11px; text-transform:uppercase; letter-spacing:0.5px; color:var(--sn-text-muted); margin-bottom:4px;">Official Festival Coupon Receipt</div>
+                <div style="font-size:22px; font-weight:800; color:var(--sn-navy-dark); margin-bottom:6px;" id="cpnReceiptId">KF-CPN-000000</div>
+                <div style="font-size:13px; color:var(--sn-teal); font-weight:700; margin-bottom:12px;" id="cpnStatus">VERIFIED &amp; REDEEMED</div>
+
+                <div style="text-align:left; font-size:12px; border-top:1px solid #e2e8f0; padding-top:12px;">
+                    <div style="display:flex; justify-content:space-between; margin-bottom:6px;"><span>Vendor Stall:</span><strong id="cpnStall">-</strong></div>
+                    <div style="display:flex; justify-content:space-between; margin-bottom:6px;"><span>Item Purchased:</span><strong id="cpnItem">-</strong></div>
+                    <div style="display:flex; justify-content:space-between; margin-bottom:6px;"><span>Redeemed Amount:</span><strong style="color:var(--sn-navy-dark);" id="cpnAmount">₹0.00</strong></div>
+                    <div style="display:flex; justify-content:space-between;"><span>Timestamp:</span><span id="cpnTime">-</span></div>
+                </div>
+            </div>
+        </div>
+        <div class="sn-modal-footer">
+            <button class="sn-btn sn-btn-primary" onclick="closeCouponModal()">Done</button>
         </div>
     </div>
 </div>
+
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <script src="/api/x_2327324_konnect/konnectfest/public/script?page=participant"></script>
 </body>

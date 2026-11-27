@@ -235,6 +235,10 @@ declare global {
                         table: 'sys_ws_operation'
                         id: '2aeab9345cc54f4b9b1dc329e91ef24d'
                     }
+                    route_organizer_bulk_allocate: {
+                        table: 'sys_ws_operation'
+                        id: 'a829c18e490b43f4a2f8c3a23dda40e1'
+                    }
                     route_organizer_event: {
                         table: 'sys_ws_operation'
                         id: '128515df120e4a37ae8a734fd7eec46d'
