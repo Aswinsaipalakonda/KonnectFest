@@ -1,0 +1,1506 @@
+const fs = require('fs');
+
+console.log('=== GENERATING POLARIS NEXT EXPERIENCE ORGANIZER WORKSPACE HTML & CLIENT SCRIPT ===');
+
+// =========================================================================
+// 1. ORGANIZER HTML (MATCHING IMAGE 2 - POLARIS NEXT EXPERIENCE WORKSPACE)
+// =========================================================================
+const organizerHtml = `<?xml version="1.0" encoding="utf-8" ?>
+<j:jelly trim="false" xmlns:j="jelly:core" xmlns:g="glide">
+<g:evaluate var="jvar_ck">gs.getSessionToken();</g:evaluate>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>KonnectFest - Organizer Workspace</title>
+    <style>
+        :root {
+            --polaris-bg: #f8fafc;
+            --polaris-card-bg: #ffffff;
+            --polaris-header-bg: #0f2e46;
+            --polaris-sidebar-bg: #162836;
+            --polaris-sidebar-hover: #1e3649;
+            --polaris-sidebar-active: #0072b2;
+            --polaris-text-main: #0f172a;
+            --polaris-text-muted: #64748b;
+            --polaris-border: #e2e8f0;
+            --polaris-primary: #0072b2;
+            --polaris-primary-hover: #005a8e;
+            --polaris-success: #15803d;
+            --polaris-success-bg: #dcfce7;
+            --polaris-warning: #b45309;
+            --polaris-warning-bg: #fef3c7;
+            --polaris-danger: #b91c1c;
+            --polaris-danger-bg: #fee2e2;
+            --font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: var(--font-family);
+            background-color: var(--polaris-bg);
+            color: var(--polaris-text-main);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow-x: hidden;
+        }
+
+        /* 1. SERVICENOW TOP CHROME HEADER */
+        .sn-top-bar {
+            height: 48px;
+            background-color: var(--polaris-header-bg);
+            color: #ffffff;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 16px;
+            font-size: 13px;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+        }
+        .sn-top-left {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+        .sn-logo-text {
+            font-size: 16px;
+            font-weight: 700;
+            letter-spacing: -0.5px;
+            color: #ffffff;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .sn-logo-badge {
+            background: #22c55e;
+            color: #ffffff;
+            font-size: 10px;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+        .sn-nav-links {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+        .sn-nav-link {
+            color: #cbd5e1;
+            padding: 6px 10px;
+            border-radius: 4px;
+            cursor: pointer;
+            text-decoration: none;
+            transition: all 0.15s ease;
+        }
+        .sn-nav-link:hover {
+            color: #ffffff;
+            background: rgba(255,255,255,0.08);
+        }
+        .sn-workspace-pill {
+            background: rgba(255,255,255,0.12);
+            color: #ffffff;
+            padding: 4px 12px;
+            border-radius: 14px;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            border: 1px solid rgba(255,255,255,0.15);
+        }
+        .sn-top-right {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .sn-search-input {
+            background: rgba(255,255,255,0.12);
+            border: 1px solid rgba(255,255,255,0.2);
+            color: #ffffff;
+            padding: 5px 12px;
+            border-radius: 4px;
+            font-size: 12px;
+            width: 220px;
+            outline: none;
+        }
+        .sn-search-input::placeholder { color: #94a3b8; }
+        .sn-user-profile {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
+            padding: 4px 8px;
+            border-radius: 4px;
+        }
+        .sn-user-avatar {
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            background: #e2e8f0;
+            color: #0f2e46;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 11px;
+        }
+
+        /* 2. WORKSPACE BODY (SIDEBAR + MAIN CONTENT) */
+        .workspace-body {
+            display: flex;
+            flex: 1;
+            min-height: calc(100vh - 48px);
+        }
+
+        /* 3. SIDEBAR NAVIGATION */
+        .workspace-sidebar {
+            width: 240px;
+            background-color: var(--polaris-sidebar-bg);
+            color: #ffffff;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            border-right: 1px solid rgba(0,0,0,0.1);
+            user-select: none;
+            flex-shrink: 0;
+        }
+        .sidebar-header {
+            padding: 12px 16px;
+            border-bottom: 1px solid rgba(255,255,255,0.08);
+            font-size: 13px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            color: #cbd5e1;
+        }
+        .sidebar-filter {
+            padding: 8px 12px;
+            border-bottom: 1px solid rgba(255,255,255,0.06);
+        }
+        .sidebar-filter input {
+            width: 100%;
+            background: rgba(255,255,255,0.08);
+            border: 1px solid rgba(255,255,255,0.12);
+            color: #fff;
+            padding: 5px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            outline: none;
+        }
+        .sidebar-menu {
+            list-style: none;
+            padding: 8px 0;
+            overflow-y: auto;
+        }
+        .sidebar-menu-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 9px 16px;
+            font-size: 13px;
+            color: #94a3b8;
+            cursor: pointer;
+            transition: all 0.15s ease;
+        }
+        .sidebar-menu-item:hover {
+            color: #ffffff;
+            background-color: var(--polaris-sidebar-hover);
+        }
+        .sidebar-menu-item.active {
+            color: #ffffff;
+            background-color: var(--polaris-sidebar-active);
+            font-weight: 600;
+        }
+        .sidebar-icon {
+            font-size: 15px;
+            width: 18px;
+            text-align: center;
+        }
+        .sidebar-footer {
+            padding: 12px 0;
+            border-top: 1px solid rgba(255,255,255,0.08);
+        }
+
+        /* 4. MAIN WORKSPACE CONTENT */
+        .workspace-main {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            background-color: var(--polaris-bg);
+            overflow-x: hidden;
+        }
+
+        /* 5. TAB STRIP */
+        .tab-strip {
+            height: 38px;
+            background: #e2e8f0;
+            border-bottom: 1px solid #cbd5e1;
+            display: flex;
+            align-items: flex-end;
+            padding: 0 16px;
+            gap: 4px;
+        }
+        .workspace-tab {
+            background: #ffffff;
+            border: 1px solid #cbd5e1;
+            border-bottom: 1px solid #ffffff;
+            padding: 6px 14px;
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--polaris-text-main);
+            border-top-left-radius: 6px;
+            border-top-right-radius: 6px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
+            margin-bottom: -1px;
+        }
+        .tab-close {
+            color: #94a3b8;
+            font-size: 12px;
+            cursor: pointer;
+        }
+        .tab-close:hover { color: #0f172a; }
+
+        /* 6. DASHBOARD CONTAINER */
+        .dashboard-container {
+            padding: 20px 24px 40px 24px;
+            max-width: 1440px;
+            margin: 0 auto;
+            width: 100%;
+        }
+
+        /* 7. EXECUTIVE HEADER CARD (PURPLE BADGE & CONTROLS) */
+        .exec-header-card {
+            background: #ffffff;
+            border: 1px solid var(--polaris-border);
+            border-radius: 8px;
+            padding: 16px 20px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 18px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.03);
+        }
+        .exec-header-left {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+        }
+        .exec-header-icon {
+            width: 48px;
+            height: 48px;
+            border-radius: 8px;
+            background: linear-gradient(135deg, #7c3aed, #4f46e5);
+            color: #ffffff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 22px;
+        }
+        .exec-header-titles h1 {
+            font-size: 20px;
+            font-weight: 700;
+            color: var(--polaris-text-main);
+            margin-bottom: 2px;
+        }
+        .exec-header-titles p {
+            font-size: 13px;
+            color: var(--polaris-text-muted);
+        }
+        .exec-header-controls {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .form-select {
+            padding: 6px 12px;
+            border: 1px solid var(--polaris-border);
+            border-radius: 6px;
+            font-size: 13px;
+            background-color: #ffffff;
+            color: var(--polaris-text-main);
+            outline: none;
+            cursor: pointer;
+        }
+        .form-select:focus { border-color: var(--polaris-primary); }
+        .refresh-btn {
+            background: #ffffff;
+            border: 1px solid var(--polaris-border);
+            width: 32px;
+            height: 32px;
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-size: 14px;
+            color: var(--polaris-text-main);
+            transition: all 0.15s ease;
+        }
+        .refresh-btn:hover { background: #f1f5f9; border-color: #cbd5e1; }
+        .refresh-spin { animation: spin 0.7s linear; }
+        @keyframes spin { 100% { transform: rotate(360deg); } }
+        .refreshed-time {
+            font-size: 11px;
+            color: var(--polaris-text-muted);
+            white-space: nowrap;
+        }
+        .sn-btn {
+            padding: 6px 14px;
+            border-radius: 6px;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            border: none;
+            transition: all 0.15s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .sn-btn-primary {
+            background-color: var(--polaris-primary);
+            color: #ffffff;
+        }
+        .sn-btn-primary:hover { background-color: var(--polaris-primary-hover); }
+        .sn-btn-outline {
+            background-color: #ffffff;
+            border: 1px solid var(--polaris-border);
+            color: var(--polaris-text-main);
+        }
+        .sn-btn-outline:hover { background-color: #f8fafc; border-color: #cbd5e1; }
+        .sn-btn-danger {
+            background-color: var(--polaris-danger);
+            color: #ffffff;
+        }
+        .sn-btn-danger:hover { background-color: #991b1b; }
+
+        /* 8. TOP 5 METRIC KPI CARDS */
+        .kpi-row {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 14px;
+            margin-bottom: 20px;
+        }
+        .kpi-card {
+            background: #ffffff;
+            border: 1px solid var(--polaris-border);
+            border-radius: 8px;
+            padding: 16px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.02);
+            position: relative;
+            transition: transform 0.15s ease, box-shadow 0.15s ease;
+        }
+        .kpi-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.06);
+        }
+        .kpi-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+        .kpi-icon-circle {
+            width: 32px;
+            height: 32px;
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 15px;
+        }
+        .kpi-icon-blue { background: #dbeafe; color: #1e40af; }
+        .kpi-icon-green { background: #dcfce7; color: #15803d; }
+        .kpi-icon-purple { background: #f3e8ff; color: #7e22ce; }
+        .kpi-icon-orange { background: #ffedd5; color: #c2410c; }
+        .kpi-icon-red { background: #fee2e2; color: #b91c1c; }
+        .kpi-title {
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--polaris-text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+        }
+        .kpi-value {
+            font-size: 24px;
+            font-weight: 700;
+            color: var(--polaris-text-main);
+            margin-bottom: 6px;
+        }
+        .kpi-trend {
+            font-size: 11px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+        .kpi-trend-up { color: #15803d; }
+
+        /* 9. MIDDLE ROW (TRANSACTION TREND + REDEMPTION + SETTLEMENT) */
+        .grid-middle {
+            display: grid;
+            grid-template-columns: 2fr 1.5fr 1fr;
+            gap: 16px;
+            margin-bottom: 20px;
+        }
+        .dash-card {
+            background: #ffffff;
+            border: 1px solid var(--polaris-border);
+            border-radius: 8px;
+            padding: 18px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.02);
+            display: flex;
+            flex-direction: column;
+        }
+        .dash-card-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 16px;
+        }
+        .dash-card-title {
+            font-size: 14px;
+            font-weight: 700;
+            color: var(--polaris-text-main);
+        }
+        .dash-card-link {
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--polaris-primary);
+            text-decoration: none;
+            cursor: pointer;
+        }
+        .dash-card-link:hover { text-decoration: underline; }
+
+        /* 9a. BAR CHART (TRANSACTION TREND) */
+        .trend-chart-box {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-end;
+            height: 180px;
+            position: relative;
+        }
+        .trend-tooltip {
+            position: absolute;
+            top: 15px;
+            left: 56%;
+            transform: translateX(-50%);
+            background: #0f172a;
+            color: #ffffff;
+            font-size: 11px;
+            font-weight: 600;
+            padding: 4px 10px;
+            border-radius: 4px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+            white-space: nowrap;
+            z-index: 10;
+        }
+        .trend-tooltip::after {
+            content: '';
+            position: absolute;
+            bottom: -4px;
+            left: 50%;
+            transform: translateX(-50%);
+            border-width: 4px 4px 0;
+            border-style: solid;
+            border-color: #0f172a transparent;
+        }
+        .trend-bars-container {
+            display: flex;
+            align-items: flex-end;
+            justify-content: space-between;
+            height: 140px;
+            padding: 0 10px;
+            border-bottom: 1px solid #e2e8f0;
+        }
+        .bar-col {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 6px;
+            flex: 1;
+        }
+        .bar-pill {
+            width: 22px;
+            background: #93c5fd;
+            border-radius: 4px 4px 0 0;
+            transition: all 0.3s ease;
+        }
+        .bar-pill.peak {
+            background: #3b82f6;
+        }
+        .bar-pill:hover {
+            background: #2563eb;
+        }
+        .bar-time {
+            font-size: 10px;
+            color: var(--polaris-text-muted);
+            margin-top: 6px;
+        }
+
+        /* 9b. REDEMPTION BY VENDOR TABLE */
+        .vendor-progress-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 12px;
+        }
+        .vendor-progress-table th {
+            text-align: left;
+            padding: 6px 8px;
+            color: var(--polaris-text-muted);
+            font-weight: 600;
+            border-bottom: 1px solid var(--polaris-border);
+        }
+        .vendor-progress-table td {
+            padding: 8px 8px;
+            border-bottom: 1px solid #f1f5f9;
+        }
+        .vendor-bar-wrap {
+            height: 8px;
+            background: #f1f5f9;
+            border-radius: 4px;
+            overflow: hidden;
+            margin-top: 4px;
+        }
+        .vendor-bar-fill {
+            height: 100%;
+            background: #3b82f6;
+            border-radius: 4px;
+        }
+
+        /* 9c. SETTLEMENT STATUS DONUT CHART */
+        .donut-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+        }
+        .donut-circle-wrap {
+            position: relative;
+            width: 120px;
+            height: 120px;
+            margin-bottom: 14px;
+        }
+        .donut-center-text {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+        }
+        .donut-center-val {
+            font-size: 18px;
+            font-weight: 700;
+            color: var(--polaris-text-main);
+        }
+        .donut-center-lbl {
+            font-size: 10px;
+            color: var(--polaris-text-muted);
+        }
+        .donut-legend {
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            font-size: 11px;
+        }
+        .legend-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .legend-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            display: inline-block;
+            margin-right: 6px;
+        }
+        .dot-green { background: #22c55e; }
+        .dot-blue { background: #3b82f6; }
+        .dot-orange { background: #f97316; }
+
+        /* 10. BOTTOM ROW (RECENT TRANSACTIONS + AI INSIGHTS) */
+        .grid-bottom {
+            display: grid;
+            grid-template-columns: 2fr 1.2fr;
+            gap: 16px;
+        }
+
+        /* 10a. RECENT TRANSACTIONS TABLE & PAGINATION */
+        .sn-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 12px;
+        }
+        .sn-table th {
+            text-align: left;
+            padding: 10px 12px;
+            background: #f8fafc;
+            color: var(--polaris-text-muted);
+            font-weight: 600;
+            border-bottom: 1px solid var(--polaris-border);
+        }
+        .sn-table td {
+            padding: 10px 12px;
+            border-bottom: 1px solid var(--polaris-border);
+            color: var(--polaris-text-main);
+        }
+        .sn-table tr:hover td {
+            background-color: #f8fafc;
+        }
+        .badge {
+            display: inline-block;
+            padding: 3px 8px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: 600;
+        }
+        .badge-success { background: var(--polaris-success-bg); color: var(--polaris-success); }
+        .badge-warning { background: var(--polaris-warning-bg); color: var(--polaris-warning); }
+        .badge-danger { background: var(--polaris-danger-bg); color: var(--polaris-danger); }
+        
+        .pagination-bar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding-top: 14px;
+            font-size: 12px;
+            color: var(--polaris-text-muted);
+        }
+        .pagination-btns {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .page-btn {
+            background: #ffffff;
+            border: 1px solid var(--polaris-border);
+            padding: 4px 10px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+            color: var(--polaris-text-main);
+            transition: all 0.15s ease;
+        }
+        .page-btn:hover:not(:disabled) {
+            background: #f1f5f9;
+            border-color: #cbd5e1;
+        }
+        .page-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        /* 10b. AI COMMERCE INSIGHTS (NOW ASSIST) */
+        .now-assist-badge {
+            background: linear-gradient(135deg, #e0e7ff, #ede9fe);
+            color: #4f46e5;
+            border: 1px solid #c7d2fe;
+            padding: 3px 8px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: 700;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+        }
+        .insights-list {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin-top: 6px;
+        }
+        .insight-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+            padding: 10px 12px;
+            border-radius: 6px;
+            background: #f8fafc;
+            border: 1px solid #f1f5f9;
+            transition: all 0.15s ease;
+        }
+        .insight-item:hover {
+            background: #f1f5f9;
+            border-color: #e2e8f0;
+        }
+        .insight-icon {
+            font-size: 16px;
+            margin-top: 2px;
+        }
+        .insight-text {
+            font-size: 12px;
+            line-height: 1.4;
+            color: var(--polaris-text-main);
+        }
+        .insight-sub {
+            font-size: 11px;
+            color: var(--polaris-text-muted);
+            margin-top: 2px;
+        }
+
+        /* 11. SUB-VIEWS (EVENT SETUP, PARTICIPANTS, STALLS, SYSTEM ADMIN) */
+        .workspace-view {
+            display: none;
+        }
+        .workspace-view.active {
+            display: block;
+        }
+
+        /* 12. EVENT SETUP FORM STYLING */
+        .form-card {
+            background: #ffffff;
+            border: 1px solid var(--polaris-border);
+            border-radius: 8px;
+            padding: 24px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.02);
+            max-width: 800px;
+        }
+        .form-group {
+            margin-bottom: 16px;
+        }
+        .form-label {
+            display: block;
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--polaris-text-main);
+            margin-bottom: 6px;
+        }
+        .form-input, .form-textarea {
+            width: 100%;
+            padding: 8px 12px;
+            border: 1px solid var(--polaris-border);
+            border-radius: 6px;
+            font-size: 13px;
+            outline: none;
+            background: #fff;
+            color: var(--polaris-text-main);
+            transition: border-color 0.15s ease;
+        }
+        .form-input:focus, .form-textarea:focus {
+            border-color: var(--polaris-primary);
+            box-shadow: 0 0 0 3px rgba(0, 114, 178, 0.1);
+        }
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+        }
+
+        /* 13. TOAST NOTIFICATIONS */
+        .toast-banner {
+            position: fixed;
+            bottom: 24px;
+            right: 24px;
+            padding: 12px 20px;
+            border-radius: 6px;
+            font-size: 13px;
+            font-weight: 600;
+            color: #ffffff;
+            display: none;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            z-index: 9999;
+            animation: slideUp 0.25s ease;
+        }
+        @keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+        .toast-success { background: #15803d; }
+        .toast-error { background: #b91c1c; }
+        .toast-info { background: #0072b2; }
+
+        /* 14. MODAL STYLING */
+        .modal-overlay {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(15, 23, 42, 0.6);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 10000;
+        }
+        .modal-box {
+            background: #ffffff;
+            border-radius: 8px;
+            width: 500px;
+            max-width: 90vw;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+            overflow: hidden;
+            animation: fadeIn 0.2s ease;
+        }
+        @keyframes fadeIn { from { opacity: 0; transform: scale(0.97); } to { opacity: 1; transform: scale(1); } }
+        .modal-header {
+            padding: 16px 20px;
+            border-bottom: 1px solid var(--polaris-border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            font-size: 15px;
+            font-weight: 700;
+        }
+        .modal-body {
+            padding: 20px;
+        }
+        .modal-footer {
+            padding: 14px 20px;
+            border-top: 1px solid var(--polaris-border);
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+            background: #f8fafc;
+        }
+    </style>
+</head>
+<body>
+    <input type="hidden" id="g_ck_token" value="\${jvar_ck}" />
+
+    <!-- 1. SERVICENOW TOP CHROME HEADER -->
+    <header class="sn-top-bar">
+        <div class="sn-top-left">
+            <div class="sn-logo-text">
+                <span style="color:#22c55e;">✦</span> ServiceNow
+                <span class="sn-logo-badge">Next Experience</span>
+            </div>
+            <nav class="sn-nav-links">
+                <a class="sn-nav-link" onclick="switchView('viewDashboard')">All</a>
+                <a class="sn-nav-link">Favorites</a>
+                <a class="sn-nav-link">History</a>
+                <div class="sn-workspace-pill">
+                    ★ KonnectFest Organizer Workspace
+                </div>
+                <a class="sn-nav-link" onclick="switchView('viewSystemAdmin')">Admin</a>
+            </nav>
+        </div>
+        <div class="sn-top-right">
+            <input type="text" class="sn-search-input" placeholder="Search events, stalls, records..." />
+            <div class="sn-user-profile" title="Organizer Administrator">
+                <div class="sn-user-avatar">OA</div>
+                <div style="font-size:12px; line-height:1.2;">
+                    <div style="font-weight:600;">Organizer Admin</div>
+                    <div style="font-size:10px; color:#cbd5e1;">KonnectFest 2026</div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- 2. WORKSPACE BODY -->
+    <div class="workspace-body">
+
+        <!-- 3. SIDEBAR NAVIGATION -->
+        <aside class="workspace-sidebar">
+            <div>
+                <div class="sidebar-header">
+                    <span>KONNECTFEST WORKSPACE</span>
+                    <span style="font-size:10px;">▾</span>
+                </div>
+                <div class="sidebar-filter">
+                    <input type="text" placeholder="Filter menu..." />
+                </div>
+                <ul class="sidebar-menu">
+                    <li class="sidebar-menu-item active" id="menuDashboard" onclick="switchView('viewDashboard', this)">
+                        <span class="sidebar-icon">🏠</span>
+                        <span>Organizer Dashboard</span>
+                    </li>
+                    <li class="sidebar-menu-item" id="menuEventSetup" onclick="switchView('viewEventSetup', this)">
+                        <span class="sidebar-icon">⚙️</span>
+                        <span>Event Setup</span>
+                    </li>
+                    <li class="sidebar-menu-item" id="menuParticipants" onclick="switchView('viewParticipants', this)">
+                        <span class="sidebar-icon">👥</span>
+                        <span>Participants</span>
+                    </li>
+                    <li class="sidebar-menu-item" id="menuStalls" onclick="switchView('viewStalls', this)">
+                        <span class="sidebar-icon">🏪</span>
+                        <span>Vendors &amp; Stalls</span>
+                    </li>
+                    <li class="sidebar-menu-item" id="menuTransactions" onclick="switchView('viewTransactions', this)">
+                        <span class="sidebar-icon">💳</span>
+                        <span>Transactions</span>
+                    </li>
+                    <li class="sidebar-menu-item" id="menuWallets" onclick="switchView('viewWallets', this)">
+                        <span class="sidebar-icon">👛</span>
+                        <span>Wallets &amp; Ledger</span>
+                    </li>
+                    <li class="sidebar-menu-item" id="menuCoupons" onclick="switchView('viewCoupons', this)">
+                        <span class="sidebar-icon">🎟️</span>
+                        <span>Coupons</span>
+                    </li>
+                    <li class="sidebar-menu-item" id="menuSettlements" onclick="switchView('viewSettlements', this)">
+                        <span class="sidebar-icon">🤝</span>
+                        <span>Settlements</span>
+                    </li>
+                    <li class="sidebar-menu-item" id="menuReports" onclick="switchView('viewReports', this)">
+                        <span class="sidebar-icon">📊</span>
+                        <span>Reports &amp; Analytics</span>
+                    </li>
+                </ul>
+            </div>
+            <div class="sidebar-footer">
+                <ul class="sidebar-menu">
+                    <li class="sidebar-menu-item" id="menuSystemAdmin" onclick="switchView('viewSystemAdmin', this)">
+                        <span class="sidebar-icon">🎛️</span>
+                        <span>System Administration</span>
+                    </li>
+                </ul>
+            </div>
+        </aside>
+
+        <!-- 4. MAIN CONTENT AREA -->
+        <main class="workspace-main">
+            <!-- TAB STRIP -->
+            <div class="tab-strip">
+                <div class="workspace-tab">
+                    <span>🏠 Organizer Dashboard</span>
+                    <span class="tab-close">✕</span>
+                </div>
+                <div style="padding:6px; cursor:pointer; color:#64748b;" title="New Tab">+</div>
+            </div>
+
+            <!-- VIEW 1: ORGANIZER DASHBOARD (EXACT IMAGE 2 REPLICA) -->
+            <div id="viewDashboard" class="workspace-view active">
+                <div class="dashboard-container">
+                    
+                    <!-- EXECUTIVE HEADER CARD -->
+                    <div class="exec-header-card">
+                        <div class="exec-header-left">
+                            <div class="exec-header-icon">🎟️</div>
+                            <div class="exec-header-titles">
+                                <h1 id="dashTitleEvent">KonnectFest 2026</h1>
+                                <p><strong>Organizer Commerce Dashboard</strong> — Real-time overview of event transactions, vendor activity and settlement status</p>
+                            </div>
+                        </div>
+                        <div class="exec-header-controls">
+                            <div>
+                                <select id="dashEventSelect" class="form-select" onchange="onDashEventChange(this.value)">
+                                    <option value="">Loading events...</option>
+                                </select>
+                            </div>
+                            <div>
+                                <select class="form-select">
+                                    <option>Last 7 days</option>
+                                    <option>Today</option>
+                                    <option>All Time</option>
+                                </select>
+                            </div>
+                            <button class="refresh-btn" id="btnRefresh" title="Refresh Telemetry" onclick="manualRefresh()">
+                                ↻
+                            </button>
+                            <span class="refreshed-time" id="lastRefreshedLabel">Last refreshed: Just now</span>
+                            <button class="sn-btn sn-btn-primary" onclick="openCreateEventModal()">+ New Event</button>
+                            <button class="sn-btn sn-btn-outline" onclick="openOnboardStallModal()">+ Onboard Stall</button>
+                        </div>
+                    </div>
+
+                    <!-- TOP 5 KPI CARDS -->
+                    <div class="kpi-row">
+                        <!-- Card 1: Total Participants -->
+                        <div class="kpi-card">
+                            <div class="kpi-header">
+                                <div class="kpi-icon-circle kpi-icon-blue">👥</div>
+                                <div class="kpi-title">Total Participants</div>
+                            </div>
+                            <div class="kpi-value" id="kpiParticipants">2,450</div>
+                            <div class="kpi-trend kpi-trend-up">↑ +12% vs previous period</div>
+                        </div>
+
+                        <!-- Card 2: Wallet Balance (Total) -->
+                        <div class="kpi-card">
+                            <div class="kpi-header">
+                                <div class="kpi-icon-circle kpi-icon-green">👛</div>
+                                <div class="kpi-title">Wallet Balance (Total)</div>
+                            </div>
+                            <div class="kpi-value" id="kpiWalletBalance">₹8,60,000</div>
+                            <div class="kpi-trend kpi-trend-up">↑ +8% vs previous period</div>
+                        </div>
+
+                        <!-- Card 3: Total Transactions -->
+                        <div class="kpi-card">
+                            <div class="kpi-header">
+                                <div class="kpi-icon-circle kpi-icon-purple">📄</div>
+                                <div class="kpi-title">Total Transactions</div>
+                            </div>
+                            <div class="kpi-value" id="kpiTransactions">4,820</div>
+                            <div class="kpi-trend kpi-trend-up">↑ +18% vs previous period</div>
+                        </div>
+
+                        <!-- Card 4: Redeemed Value -->
+                        <div class="kpi-card">
+                            <div class="kpi-header">
+                                <div class="kpi-icon-circle kpi-icon-orange">🎁</div>
+                                <div class="kpi-title">Redeemed Value</div>
+                            </div>
+                            <div class="kpi-value" id="kpiRedeemed">₹5,20,000</div>
+                            <div class="kpi-trend kpi-trend-up">↑ +15% vs previous period</div>
+                        </div>
+
+                        <!-- Card 5: Active Vendors -->
+                        <div class="kpi-card">
+                            <div class="kpi-header">
+                                <div class="kpi-icon-circle kpi-icon-red">🏪</div>
+                                <div class="kpi-title">Active Vendors</div>
+                            </div>
+                            <div class="kpi-value" id="kpiActiveVendors">38</div>
+                            <div class="kpi-trend kpi-trend-up">↑ +3 vs previous period</div>
+                        </div>
+                    </div>
+
+                    <!-- MIDDLE ROW: TRANSACTION TREND + REDEMPTION BY VENDOR + SETTLEMENT STATUS -->
+                    <div class="grid-middle">
+                        
+                        <!-- Middle 1: Transaction Trend Bar Chart -->
+                        <div class="dash-card">
+                            <div class="dash-card-header">
+                                <span class="dash-card-title">Transaction Trend</span>
+                                <select class="form-select" style="font-size:11px; padding:3px 8px;">
+                                    <option>Last 7 days</option>
+                                    <option>Today</option>
+                                </select>
+                            </div>
+                            <div class="trend-chart-box">
+                                <div class="trend-tooltip">6 PM - 8 PM: 728 transactions</div>
+                                <div class="trend-bars-container">
+                                    <div class="bar-col"><div class="bar-pill" style="height:35px;"></div><span class="bar-time">8 AM</span></div>
+                                    <div class="bar-col"><div class="bar-pill" style="height:55px;"></div><span class="bar-time">10 AM</span></div>
+                                    <div class="bar-col"><div class="bar-pill" style="height:70px;"></div><span class="bar-time">12 PM</span></div>
+                                    <div class="bar-col"><div class="bar-pill" style="height:60px;"></div><span class="bar-time">2 PM</span></div>
+                                    <div class="bar-col"><div class="bar-pill" style="height:85px;"></div><span class="bar-time">4 PM</span></div>
+                                    <div class="bar-col"><div class="bar-pill peak" style="height:120px;"></div><span class="bar-time" style="font-weight:700; color:#2563eb;">6 PM</span></div>
+                                    <div class="bar-col"><div class="bar-pill" style="height:95px;"></div><span class="bar-time">8 PM</span></div>
+                                    <div class="bar-col"><div class="bar-pill" style="height:45px;"></div><span class="bar-time">10 PM</span></div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Middle 2: Redemption by Vendor -->
+                        <div class="dash-card">
+                            <div class="dash-card-header">
+                                <span class="dash-card-title">Redemption by Vendor</span>
+                                <a class="dash-card-link" onclick="switchView('viewStalls')">View all</a>
+                            </div>
+                            <table class="vendor-progress-table">
+                                <thead>
+                                    <tr>
+                                        <th>Vendor</th>
+                                        <th style="text-align:right;">Transactions</th>
+                                        <th style="text-align:right;">Redeemed Value (₹)</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="vendorProgressBody">
+                                    <tr>
+                                        <td>
+                                            <div style="font-weight:600;">Food Stall A</div>
+                                            <div class="vendor-bar-wrap"><div class="vendor-bar-fill" style="width: 85%;"></div></div>
+                                        </td>
+                                        <td style="text-align:right; font-weight:600;">1,240</td>
+                                        <td style="text-align:right; font-weight:600;">₹1,62,340</td>
+                                    </tr>
+                                    <tr>
+                                        <td>
+                                            <div style="font-weight:600;">Food Stall B</div>
+                                            <div class="vendor-bar-wrap"><div class="vendor-bar-fill" style="width: 60%;"></div></div>
+                                        </td>
+                                        <td style="text-align:right; font-weight:600;">820</td>
+                                        <td style="text-align:right; font-weight:600;">₹1,08,220</td>
+                                    </tr>
+                                    <tr>
+                                        <td>
+                                            <div style="font-weight:600;">Games Zone</div>
+                                            <div class="vendor-bar-wrap"><div class="vendor-bar-fill" style="width: 45%;"></div></div>
+                                        </td>
+                                        <td style="text-align:right; font-weight:600;">410</td>
+                                        <td style="text-align:right; font-weight:600;">₹84,500</td>
+                                    </tr>
+                                    <tr>
+                                        <td>
+                                            <div style="font-weight:600;">Merchandise</div>
+                                            <div class="vendor-bar-wrap"><div class="vendor-bar-fill" style="width: 32%;"></div></div>
+                                        </td>
+                                        <td style="text-align:right; font-weight:600;">302</td>
+                                        <td style="text-align:right; font-weight:600;">₹62,400</td>
+                                    </tr>
+                                    <tr>
+                                        <td>
+                                            <div style="font-weight:600;">Other Stalls</div>
+                                            <div class="vendor-bar-wrap"><div class="vendor-bar-fill" style="width: 25%;"></div></div>
+                                        </td>
+                                        <td style="text-align:right; font-weight:600;">196</td>
+                                        <td style="text-align:right; font-weight:600;">₹45,300</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <!-- Middle 3: Settlement Status Donut Chart -->
+                        <div class="dash-card">
+                            <div class="dash-card-header">
+                                <span class="dash-card-title">Settlement Status</span>
+                                <a class="dash-card-link" onclick="switchView('viewSettlements')">View all</a>
+                            </div>
+                            <div class="donut-container">
+                                <div class="donut-circle-wrap">
+                                    <svg viewBox="0 0 36 36" style="width:100%; height:100%; transform: rotate(-90deg);">
+                                        <path d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="#22c55e" stroke-width="4" stroke-dasharray="35, 100" />
+                                        <path d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="#3b82f6" stroke-width="4" stroke-dasharray="45, 100" stroke-dashoffset="-35" />
+                                        <path d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="#f97316" stroke-width="4" stroke-dasharray="20, 100" stroke-dashoffset="-80" />
+                                    </svg>
+                                    <div class="donut-center-text">
+                                        <div class="donut-center-val" id="donutTotalVendors">54</div>
+                                        <div class="donut-center-lbl">Vendors</div>
+                                    </div>
+                                </div>
+                                <div class="donut-legend">
+                                    <div class="legend-row">
+                                        <span><span class="legend-dot dot-green"></span>Settled</span>
+                                        <strong id="legendSettled">18</strong>
+                                    </div>
+                                    <div class="legend-row">
+                                        <span><span class="legend-dot dot-blue"></span>Approved</span>
+                                        <strong id="legendApproved">24</strong>
+                                    </div>
+                                    <div class="legend-row">
+                                        <span><span class="legend-dot dot-orange"></span>Pending Review</span>
+                                        <strong id="legendPending">12</strong>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
+
+                    <!-- BOTTOM ROW: RECENT TRANSACTIONS + AI COMMERCE INSIGHTS -->
+                    <div class="grid-bottom">
+                        
+                        <!-- Bottom 1: Recent Transactions Table with Pagination -->
+                        <div class="dash-card">
+                            <div class="dash-card-header">
+                                <span class="dash-card-title">Recent Transactions</span>
+                                <a class="dash-card-link" onclick="switchView('viewTransactions')">View all</a>
+                            </div>
+                            <table class="sn-table">
+                                <thead>
+                                    <tr>
+                                        <th>Transaction ID</th>
+                                        <th>Time</th>
+                                        <th>Participant</th>
+                                        <th>Vendor</th>
+                                        <th style="text-align:right;">Amount (₹)</th>
+                                        <th style="text-align:center;">Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="recentTxBody">
+                                    <!-- Populated dynamically with pagination -->
+                                </tbody>
+                            </table>
+                            
+                            <!-- PAGINATION CONTROLS -->
+                            <div class="pagination-bar">
+                                <span id="txPageInfo">Showing 1 to 5 of 24 records</span>
+                                <div class="pagination-btns">
+                                    <button class="page-btn" id="btnTxPrev" onclick="changeTxPage(-1)">&lt; Previous</button>
+                                    <span id="txCurrentPage" style="font-weight:600; padding:0 4px;">1</span>
+                                    <button class="page-btn" id="btnTxNext" onclick="changeTxPage(1)">Next &gt;</button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Bottom 2: AI Commerce Insights -->
+                        <div class="dash-card">
+                            <div class="dash-card-header">
+                                <span class="dash-card-title">AI Commerce Insights</span>
+                                <div class="now-assist-badge">
+                                    <span>✨</span> Now Assist
+                                </div>
+                            </div>
+                            <div class="insights-list">
+                                <div class="insight-item">
+                                    <span class="insight-icon" style="color:#f59e0b;">📊</span>
+                                    <div>
+                                        <div class="insight-text"><strong>Food Stall A has the highest redemption volume.</strong> Accounts for 32% of total transactions in the selected period.</div>
+                                    </div>
+                                </div>
+                                <div class="insight-item">
+                                    <span class="insight-icon" style="color:#3b82f6;">📈</span>
+                                    <div>
+                                        <div class="insight-text"><strong>Transaction activity peaks between 6 PM and 8 PM.</strong> Approximately 28% of total transactions occur during this period.</div>
+                                    </div>
+                                </div>
+                                <div class="insight-item">
+                                    <span class="insight-icon" style="color:#8b5cf6;">🟣</span>
+                                    <div>
+                                        <div class="insight-text"><strong>Food category demand is higher than merchandise.</strong> Food stalls contribute 55% of total redeemed value.</div>
+                                    </div>
+                                </div>
+                                <div class="insight-item">
+                                    <span class="insight-icon" style="color:#10b981;">💡</span>
+                                    <div>
+                                        <div class="insight-text"><strong>Consider increasing food-stall capacity during peak hours.</strong> Based on current trends, additional vendors may reduce wait time.</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
+
+                </div>
+            </div>
+
+            <!-- VIEW 2: EVENT SETUP & UPI CONFIGURATION -->
+            <div id="viewEventSetup" class="workspace-view">
+                <div class="dashboard-container">
+                    <div class="form-card">
+                        <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:18px;">
+                            <div>
+                                <h2 style="font-size:18px; font-weight:700;">Festival Event Setup &amp; Centralized Receiving UPI</h2>
+                                <p style="font-size:13px; color:var(--polaris-text-muted);">Configure event parameters or create new festival editions without overwriting existing data.</p>
+                            </div>
+                            <button class="sn-btn sn-btn-outline" onclick="prepareCreateNewEventForm()">+ Create New Event</button>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">Select Event to Manage / Edit</label>
+                            <select id="eventSelectorDropdown" class="form-select" style="width:100%;" onchange="onSelectEventToEdit(this.value)">
+                                <option value="">-- Choose Event --</option>
+                            </select>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label class="form-label">Event Name <span style="color:#b91c1c;">*</span></label>
+                                <input type="text" id="evInputName" class="form-input" placeholder="e.g. KonnectFest 2026" onfocus="onFormFieldFocus()" onblur="onFormFieldBlur()" />
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Official Receiving UPI ID (VPA) <span style="color:#b91c1c;">*</span></label>
+                                <input type="text" id="evInputUpi" class="form-input" placeholder="e.g. 9849600480@ybl" onfocus="onFormFieldFocus()" onblur="onFormFieldBlur()" />
+                            </div>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label class="form-label">Official Payee Legal Display Name <span style="color:#b91c1c;">*</span></label>
+                                <input type="text" id="evInputPayee" class="form-input" placeholder="e.g. KonnectFest Committee" onfocus="onFormFieldFocus()" onblur="onFormFieldBlur()" />
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Lifecycle Status</label>
+                                <select id="evInputState" class="form-select" style="width:100%;">
+                                    <option value="registration_open">Registration Open</option>
+                                    <option value="active">Active / Fest In Progress</option>
+                                    <option value="completed">Completed (Unlock Refunds)</option>
+                                    <option value="closed">Closed</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">Event Description / Guidelines</label>
+                            <textarea id="evInputDesc" class="form-textarea" rows="3" placeholder="Festival guidelines and rules..." onfocus="onFormFieldFocus()" onblur="onFormFieldBlur()"></textarea>
+                        </div>
+
+                        <div style="display:flex; align-items:center; justify-content:space-between; margin-top:20px; padding-top:16px; border-top:1px solid var(--polaris-border);">
+                            <div style="display:flex; gap:8px;">
+                                <button class="sn-btn sn-btn-outline" onclick="quickTransitionState('registration_open')">Open Registration</button>
+                                <button class="sn-btn sn-btn-outline" onclick="quickTransitionState('active')">Set Active</button>
+                                <button class="sn-btn sn-btn-outline" onclick="quickTransitionState('completed')">Complete Event</button>
+                            </div>
+                            <div style="display:flex; gap:10px;">
+                                <button class="sn-btn sn-btn-primary" id="btnSaveEvent" onclick="saveOrUpdateEvent()">Save Configuration</button>
+                                <button class="sn-btn sn-btn-outline" onclick="switchView('viewDashboard')">Cancel</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- VIEW 3: PARTICIPANTS LIST -->
+            <div id="viewParticipants" class="workspace-view">
+                <div class="dashboard-container">
+                    <div class="dash-card">
+                        <div class="dash-card-header">
+                            <div>
+                                <h2 style="font-size:16px; font-weight:700;">Attendee Registrations</h2>
+                                <p style="font-size:12px; color:var(--polaris-text-muted);">Verified festival attendees and wallet activation records</p>
+                            </div>
+                            <input type="text" id="attendeeSearch" class="form-input" style="width:240px; padding:6px 10px;" placeholder="Search by name, email..." onkeyup="filterAttendees()" />
+                        </div>
+                        <table class="sn-table">
+                            <thead>
+                                <tr>
+                                    <th>Attendee Name</th>
+                                    <th>Email</th>
+                                    <th>Phone</th>
+                                    <th>Initial Funding</th>
+                                    <th>UTR Reference</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody id="attendeesTableBody">
+                                <!-- Populated dynamically -->
+                            </tbody>
+                        </table>
+                        <div class="pagination-bar">
+                            <span id="partPageInfo">Showing 0 records</span>
+                            <div class="pagination-btns">
+                                <button class="page-btn" id="btnPartPrev" onclick="changePartPage(-1)">&lt; Previous</button>
+                                <span id="partCurrentPage" style="font-weight:600; padding:0 4px;">1</span>
+                                <button class="page-btn" id="btnPartNext" onclick="changePartPage(1)">Next &gt;</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- VIEW 4: VENDORS & STALLS -->
+            <div id="viewStalls" class="workspace-view">
+                <div class="dashboard-container">
+                    <div class="dash-card">
+                        <div class="dash-card-header">
+                            <div>
+                                <h2 style="font-size:16px; font-weight:700;">Authorized Stalls &amp; Vendors</h2>
+                                <p style="font-size:12px; color:var(--polaris-text-muted);">Live stall telemetry, transaction volumes, and settlement balances</p>
+                            </div>
+                            <div style="display:flex; gap:8px;">
+                                <button class="sn-btn sn-btn-primary" onclick="openOnboardStallModal()">+ Onboard Stall</button>
+                            </div>
+                        </div>
+                        <table class="sn-table">
+                            <thead>
+                                <tr>
+                                    <th>Stall Number</th>
+                                    <th>Vendor Name</th>
+                                    <th>Category</th>
+                                    <th style="text-align:right;">Sales (₹)</th>
+                                    <th style="text-align:right;">Txns</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody id="stallsTableBody">
+                                <!-- Populated dynamically -->
+                            </tbody>
+                        </table>
+                        <div class="pagination-bar">
+                            <span id="stallPageInfo">Showing 0 stalls</span>
+                            <div class="pagination-btns">
+                                <button class="page-btn" id="btnStallPrev" onclick="changeStallPage(-1)">&lt; Previous</button>
+                                <span id="stallCurrentPage" style="font-weight:600; padding:0 4px;">1</span>
+                                <button class="page-btn" id="btnStallNext" onclick="changeStallPage(1)">Next &gt;</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- VIEW 5: SYSTEM ADMINISTRATION (DATA PURGE & RECONCILIATION) -->
+            <div id="viewSystemAdmin" class="workspace-view">
+                <div class="dashboard-container">
+                    <div class="form-card" style="border-color:#fca5a5;">
+                        <h2 style="font-size:18px; font-weight:700; color:#b91c1c; margin-bottom:8px;">System &amp; Data Administration</h2>
+                        <p style="font-size:13px; color:var(--polaris-text-muted); margin-bottom:20px;">
+                            Administrative operations, test data cleanup, and financial environment resets.
+                        </p>
+
+                        <div style="background:#fee2e2; border:1px solid #f87171; border-radius:6px; padding:16px; margin-bottom:20px;">
+                            <h4 style="font-size:14px; font-weight:700; color:#991b1b; margin-bottom:6px;">⚠️ Clean Slate: Purge All Previous Test Data</h4>
+                            <p style="font-size:12px; color:#7f1d1d; line-height:1.5; margin-bottom:12px;">
+                                This will remove all previously created test stalls, test attendee registrations, test wallets, mock purchase transactions, and settlement batches. The primary master event will be preserved in a fresh, clean state.
+                            </p>
+                            <button class="sn-btn sn-btn-danger" onclick="triggerPurgeTestData()">
+                                🗑️ Purge All Test Data Now
+                            </button>
+                        </div>
+
+                        <div style="display:flex; justify-content:flex-end;">
+                            <button class="sn-btn sn-btn-outline" onclick="switchView('viewDashboard')">Return to Dashboard</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </main>
+    </div>
+
+    <!-- MODAL 1: CREATE NEW EVENT -->
+    <div id="modalCreateEvent" class="modal-overlay">
+        <div class="modal-box">
+            <div class="modal-header">
+                <span>Create New Festival Event</span>
+                <span class="tab-close" onclick="closeModal('modalCreateEvent')">✕</span>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label class="form-label">Event Name <span style="color:#b91c1c;">*</span></label>
+                    <input type="text" id="mNewEvName" class="form-input" placeholder="e.g. KonnectFest 2026" />
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Official Receiving UPI ID (VPA) <span style="color:#b91c1c;">*</span></label>
+                    <input type="text" id="mNewEvUpi" class="form-input" placeholder="e.g. 9849600480@ybl" />
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Official Payee Legal Display Name <span style="color:#b91c1c;">*</span></label>
+                    <input type="text" id="mNewEvPayee" class="form-input" placeholder="e.g. KonnectFest Committee" />
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Initial State</label>
+                    <select id="mNewEvState" class="form-select" style="width:100%;">
+                        <option value="registration_open">Registration Open</option>
+                        <option value="active">Active</option>
+                    </select>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="sn-btn sn-btn-outline" onclick="closeModal('modalCreateEvent')">Cancel</button>
+                <button class="sn-btn sn-btn-primary" onclick="submitModalCreateEvent()">Create Event</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL 2: ONBOARD STALL -->
+    <div id="modalOnboardStall" class="modal-overlay">
+        <div class="modal-box">
+            <div class="modal-header">
+                <span>Onboard Vendor Stall</span>
+                <span class="tab-close" onclick="closeModal('modalOnboardStall')">✕</span>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label class="form-label">Stall Number / Code <span style="color:#b91c1c;">*</span></label>
+                    <input type="text" id="mStallCode" class="form-input" placeholder="e.g. Stall #01" />
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Vendor Business Name <span style="color:#b91c1c;">*</span></label>
+                    <input type="text" id="mStallName" class="form-input" placeholder="e.g. Hot Pizza &amp; Beverages" />
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Category</label>
+                    <select id="mStallCategory" class="form-select" style="width:100%;">
+                        <option value="food_beverage">Food &amp; Beverage</option>
+                        <option value="merchandise">Merchandise &amp; Retail</option>
+                        <option value="games_entertainment">Games &amp; Fun</option>
+                        <option value="other">Other</option>
+                    </select>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="sn-btn sn-btn-outline" onclick="closeModal('modalOnboardStall')">Cancel</button>
+                <button class="sn-btn sn-btn-primary" onclick="submitModalOnboardStall()">Onboard Stall</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- TOAST BANNER -->
+    <div id="toastBanner" class="toast-banner"></div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <script src="/api/x_2327324_konnect/konnectfest/public/script?page=organizer"></script>
+</body>
+</html>
+</j:jelly>`;
+
+fs.writeFileSync('src/fluent/pages/organizer.html', organizerHtml, 'utf8');
+console.log('1. Generated organizer.html (Next Experience Polaris Workspace layout)!');
