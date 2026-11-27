@@ -1,0 +1,12 @@
+{
+  "version": 2,
+  "skills": {
+    "servicenow-agent-skills": {
+      "source": "aatrey882/servicenow-agent-skills",
+      "commit": "699bd3b9b579e6fcfd7134afb2a0ef5f8cc6e4fa",
+      "sourceType": "github",
+      "skillPath": "SKILL.md",
+      "computedHash": "cdbdec665ee36dd7668a083842edf29a45f1e03554a63d2943ec46f125bbf41d"
+    }
+  }
+}

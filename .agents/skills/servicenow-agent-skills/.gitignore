@@ -1,0 +1,36 @@
+# Planning (internal — not published)
+.planning/
+
+# Skills CLI install artifacts (local testing)
+.agents/
+skills-lock.json
+
+# Dependencies
+node_modules/
+
+# ServiceNow SDK build artifacts
+.now/
+dist/
+
+# Environment & credentials
+.env
+.env.*
+*.credentials.json
+
+# macOS
+.DS_Store
+
+# Logs
+*.log
+npm-debug.log*
+
+# Editor
+.vscode/
+.idea/
+*.swp
+
+# Python (skills-ref tooling)
+__pycache__/
+*.pyc
+.venv/
+sn-sdk-fluent-workspace/

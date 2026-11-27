@@ -1,0 +1,4 @@
+# Exclude non-distributable files
+scripts/
+*.log
+.DS_Store
